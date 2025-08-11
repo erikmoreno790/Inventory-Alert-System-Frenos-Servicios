@@ -1,0 +1,156 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Bell, Boxes, AlertTriangle, PlusCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import TopNavbar from "../components/TopNavbar";
+
+const DashboardPage = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [totalProductos, setTotalProductos] = useState(0);
+  const [bajoStock, setBajoStock] = useState(0);
+  const [alertas, setAlertas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const token = localStorage.getItem("token");
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const [productosRes, alertasRes] = await Promise.all([
+          axios.get("http://localhost:3000/api/products", config),
+          axios.get("http://localhost:3000/api/alerts", config), // Ajusta si tu ruta es diferente
+        ]);
+
+        const productos = productosRes.data;
+        const alertasActivas = alertasRes.data;
+
+        setTotalProductos(productos.length);
+        setBajoStock(productos.filter((p) => p.stock < p.stock_minimo).length);
+        setAlertas(alertasActivas.slice(0, 5)); // últimas 5 alertas
+      } catch (error) {
+        console.error(
+          "Error al cargar datos del dashboard:",
+          error.response?.data || error.message || error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [token]);
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      <div
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
+      >
+        <TopNavbar onToggleSidebar={toggleSidebar} />
+
+        <main className="p-6">
+          {loading ? (
+            <p className="text-gray-600">Cargando datos...</p>
+          ) : (
+            <>
+              {/* KPIs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                  <Boxes className="text-blue-600" />
+                  <div>
+                    <p className="text-gray-600 text-sm">Total Repuestos</p>
+                    <p className="text-xl font-bold">{totalProductos}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                  <AlertTriangle className="text-yellow-600" />
+                  <div>
+                    <p className="text-gray-600 text-sm">Bajo Stock</p>
+                    <p className="text-xl font-bold">{bajoStock}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                  <Bell className="text-red-600" />
+                  <div>
+                    <p className="text-gray-600 text-sm">Alertas Activas</p>
+                    <p className="text-xl font-bold">{alertas.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Últimas alertas */}
+              <div className="bg-white p-4 rounded-lg shadow mb-6">
+                <h2 className="text-lg font-semibold mb-4">Últimas Alertas</h2>
+                {alertas.length > 0 ? (
+                  <ul className="space-y-2">
+                    {alertas.map((alerta, index) => (
+                      <li
+                        key={index}
+                        className="text-sm text-gray-700 border-b pb-2"
+                      >
+                        🔔{" "}
+                        {alerta.mensaje ||
+                          alerta.descripcion ||
+                          "Alerta sin mensaje"}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No hay alertas recientes.
+                  </p>
+                )}
+              </div>
+
+              {/* Accesos rápidos */}
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h2 className="text-lg font-semibold mb-4">Accesos Rápidos</h2>
+                <div className="flex flex-wrap gap-4">
+                  <Link
+                    to="/inventario"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    <Boxes size={18} />
+                    Inventario
+                  </Link>
+                  <Link
+                    to="/inventario/nuevo"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    <PlusCircle size={18} />
+                    Nuevo Repuesto
+                  </Link>
+                  <Link
+                    to="/alertas"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    <Bell size={18} />
+                    Ver Alertas
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
