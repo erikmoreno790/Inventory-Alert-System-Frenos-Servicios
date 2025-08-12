@@ -112,13 +112,21 @@ const getMovementsByProductId = async (id) => {
 };
 
 const getAllCategories = async () => {
-    const res = await pool.query('SELECT DISTINCT nombre FROM categorias INNER JOIN products ON products.id_categoria = categorias.id_categoria');
-    return res.rows.map(row => row.categoria);
+  const res = await pool.query(`
+    SELECT id_categoria, nombre
+    FROM categorias
+    ORDER BY nombre
+  `);
+  return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
 };
 
-const getAllProviders = async () => {
-    const res = await pool.query('SELECT DISTINCT nombre FROM proveedores INNER JOIN products ON products.id_proveedor = proveedores.id_proveedor');
-    return res.rows.map(row => row.proveedor);
+const getAllProviders= async () => {
+  const res = await pool.query(`
+    SELECT id_categoria, nombre
+    FROM categorias
+    ORDER BY nombre
+  `);
+  return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
 };
 
 module.exports = {

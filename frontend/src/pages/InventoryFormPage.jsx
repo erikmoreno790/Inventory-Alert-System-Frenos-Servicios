@@ -4,16 +4,18 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 
+// ... imports sin cambios
+
 const InventoryFormPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { id } = useParams(); // Si existe, estamos en modo edición
+  const { id } = useParams();
   const token = localStorage.getItem("token");
 
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
-    categoria_id: "",
+    categoria_id: "", // ✅ Este es el que realmente enviamos al backend
     proveedor_id: "",
     stock_minimo: "",
     precio_costo: "",
@@ -29,7 +31,7 @@ const InventoryFormPage = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Cargar proveedores y categorías
+  // ✅ Cargar proveedores y categorías
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,7 +41,7 @@ const InventoryFormPage = () => {
           axios.get("http://localhost:3000/api/products/proveedores", config),
         ]);
 
-        setCategorias(catRes.data);
+        setCategorias(catRes.data); // [{id_categoria, nombre}, ...]
         setProveedores(provRes.data);
       } catch (err) {
         console.error("Error cargando categorías o proveedores:", err);
@@ -49,7 +51,7 @@ const InventoryFormPage = () => {
     fetchData();
   }, [token]);
 
-  // Si hay ID, cargar datos del producto
+  // ✅ Si hay ID, cargar datos del producto para edición
   useEffect(() => {
     const fetchProducto = async () => {
       if (!id) return setLoading(false);
@@ -62,7 +64,7 @@ const InventoryFormPage = () => {
         setForm({
           nombre: res.data.nombre,
           descripcion: res.data.descripcion || "",
-          categoria_id: res.data.categoria_id || "",
+          categoria_id: res.data.categoria_id || "", // ✅ Se guarda como ID, no como texto
           proveedor_id: res.data.proveedor_id || "",
           stock_minimo: res.data.stock_minimo || "",
           precio_costo: res.data.precio_costo || "",
@@ -84,6 +86,7 @@ const InventoryFormPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ En el submit enviamos form con categoria_id como número
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -104,7 +107,6 @@ const InventoryFormPage = () => {
       } else {
         await axios.post("http://localhost:3000/api/products", form, config);
       }
-
       navigate("/inventario");
     } catch (err) {
       console.error(
@@ -157,6 +159,7 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
                 <div>
                   <label className="block mb-1">Descripción</label>
                   <textarea
@@ -166,23 +169,26 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   ></textarea>
                 </div>
+
                 <div>
                   <label className="block mb-1">Categoría</label>
+                  {/* ✅ Cambiado: usamos categoria_id como value */}
                   <select
                     name="categoria_id"
                     value={form.categoria_id}
-                    onChange={handleChange}
+                    onChange={handleChange} // Actualiza form.categoria_id
                     required
                     className="w-full border rounded px-3 py-2"
                   >
                     <option value="">Seleccione una categoría</option>
                     {categorias.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.nombre}
+                      <option key={cat.id_categoria} value={cat.id_categoria}>
+                        {cat.nombre} {/* Texto visible */}
                       </option>
                     ))}
                   </select>
                 </div>
+
                 <div>
                   <label className="block mb-1">Proveedor</label>
                   <select
@@ -200,6 +206,8 @@ const InventoryFormPage = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* Stock mínimo */}
                 <div>
                   <label className="block mb-1">Stock mínimo</label>
                   <input
@@ -212,6 +220,8 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
+                {/* Precio */}
                 <div>
                   <label className="block mb-1">Precio de costo</label>
                   <input
@@ -225,6 +235,8 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
+                {/* Ubicación */}
                 <div>
                   <label className="block mb-1">Ubicación</label>
                   <input
@@ -235,6 +247,8 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
+                {/* Código interno */}
                 <div>
                   <label className="block mb-1">Código interno</label>
                   <input
@@ -245,6 +259,7 @@ const InventoryFormPage = () => {
                     className="w-full border rounded px-3 py-2"
                   />
                 </div>
+
                 <div className="text-right">
                   <button
                     type="submit"
@@ -263,3 +278,4 @@ const InventoryFormPage = () => {
 };
 
 export default InventoryFormPage;
+
