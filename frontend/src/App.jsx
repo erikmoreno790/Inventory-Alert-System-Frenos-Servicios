@@ -8,6 +8,7 @@ import EntriesPage from "./pages/EntriesPage";
 import ExitsPage from "./pages/ExitsPage";
 import MovementsHistoryPage from "./pages/MovementsHistoryPage";
 import AlertsPage from "./pages/AlertsPage";
+import QuotationsPage from "./pages/QuotationsPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import ServiceOrderFormPage from "./pages/ServiceOrderFormPage";
 import ServiceOdersListPage from "./pages/ServiceOrdersListPage";
@@ -91,6 +92,14 @@ function App() {
           }
         />
         {/* <Route path="/alertas/configuracion" element={<PrivateRoute><AlertSettingsPage/></PrivateRoute>} /> */}
+        <Route
+          path="/cotizacion"
+          element={
+            <PrivateRoute>
+              <QuotationsPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/ordenes-servicio"
           element={
