@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import { useNavigate } from "react-router-dom";
 
 const QuotationsPage = () => {
   const [form, setForm] = useState({
@@ -21,6 +22,8 @@ const QuotationsPage = () => {
   const [inventoryList, setInventoryList] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -30,16 +33,18 @@ const QuotationsPage = () => {
     items.reduce((sum, item) => sum + item.cantidad * item.precio, 0);
 
   const applyDiscount = () => {
-  const input = prompt("Ingrese el descuento en porcentaje (ej: 10 para 10%)");
-  if (!input) return;
+    const input = prompt(
+      "Ingrese el descuento en porcentaje (ej: 10 para 10%)"
+    );
+    if (!input) return;
 
-  const percent = parseFloat(input.trim());
-  if (!isNaN(percent) && percent >= 0 && percent <= 100) {
-    setDiscountPercent(percent);
-  } else {
-    alert("Por favor ingrese un número válido entre 0 y 100");
-  }
-};
+    const percent = parseFloat(input.trim());
+    if (!isNaN(percent) && percent >= 0 && percent <= 100) {
+      setDiscountPercent(percent);
+    } else {
+      alert("Por favor ingrese un número válido entre 0 y 100");
+    }
+  };
 
   // Cargar datos del backend
   useEffect(() => {
@@ -133,7 +138,9 @@ const QuotationsPage = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={toggleSidebar} />
         <main>
@@ -154,23 +161,97 @@ const QuotationsPage = () => {
 
             {/* Datos del cliente */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <input name="cliente" value={form.cliente} onChange={handleFormChange} placeholder="Cliente / Empresa" className="border p-2" />
-              <input name="nit" value={form.nit} onChange={handleFormChange} placeholder="NIT / CC" className="border p-2" />
-              <input name="telefono" value={form.telefono} onChange={handleFormChange} placeholder="Teléfono" className="border p-2" />
-              <input name="email" value={form.email} onChange={handleFormChange} placeholder="Email" className="border p-2" />
-              <input name="placa" value={form.placa} onChange={handleFormChange} placeholder="Placa" className="border p-2" />
-              <input name="vehiculo" value={form.vehiculo} onChange={handleFormChange} placeholder="Vehículo" className="border p-2" />
-              <input name="modelo" value={form.modelo} onChange={handleFormChange} placeholder="Modelo" className="border p-2" />
-              <input name="kilometraje" value={form.kilometraje} onChange={handleFormChange} placeholder="Kilometraje" className="border p-2" />
-              <input type="date" name="fechaVencimiento" value={form.fechaVencimiento} onChange={handleFormChange} className="border p-2" />
+              <input
+                name="cliente"
+                value={form.cliente}
+                onChange={handleFormChange}
+                placeholder="Cliente / Empresa"
+                className="border p-2"
+              />
+              <input
+                name="nit"
+                value={form.nit}
+                onChange={handleFormChange}
+                placeholder="NIT / CC"
+                className="border p-2"
+              />
+              <input
+                name="telefono"
+                value={form.telefono}
+                onChange={handleFormChange}
+                placeholder="Teléfono"
+                className="border p-2"
+              />
+              <input
+                name="email"
+                value={form.email}
+                onChange={handleFormChange}
+                placeholder="Email"
+                className="border p-2"
+              />
+              <input
+                name="placa"
+                value={form.placa}
+                onChange={handleFormChange}
+                placeholder="Placa"
+                className="border p-2"
+              />
+              <input
+                name="vehiculo"
+                value={form.vehiculo}
+                onChange={handleFormChange}
+                placeholder="Vehículo"
+                className="border p-2"
+              />
+              <input
+                name="modelo"
+                value={form.modelo}
+                onChange={handleFormChange}
+                placeholder="Modelo"
+                className="border p-2"
+              />
+              <input
+                name="kilometraje"
+                value={form.kilometraje}
+                onChange={handleFormChange}
+                placeholder="Kilometraje"
+                className="border p-2"
+              />
+              <input
+                type="date"
+                name="fechaVencimiento"
+                value={form.fechaVencimiento}
+                onChange={handleFormChange}
+                className="border p-2"
+              />
             </div>
 
             {/* Botones de agregar */}
             <div className="flex gap-2 mb-4">
-              <button onClick={() => addFromList("servicio")} className="bg-blue-500 text-white px-3 py-1 rounded">Agregar servicio desde lista</button>
-              <button onClick={() => addManualItem("servicio")} className="bg-green-500 text-white px-3 py-1 rounded">Agregar servicio manual</button>
-              <button onClick={() => addFromList("repuesto")} className="bg-blue-500 text-white px-3 py-1 rounded">Agregar repuesto desde inventario</button>
-              <button onClick={() => addManualItem("repuesto")} className="bg-green-500 text-white px-3 py-1 rounded">Agregar repuesto manual</button>
+              <button
+                onClick={() => addFromList("servicio")}
+                className="bg-blue-500 text-white px-3 py-1 rounded"
+              >
+                Agregar servicio desde lista
+              </button>
+              <button
+                onClick={() => addManualItem("servicio")}
+                className="bg-green-500 text-white px-3 py-1 rounded"
+              >
+                Agregar servicio manual
+              </button>
+              <button
+                onClick={() => addFromList("repuesto")}
+                className="bg-blue-500 text-white px-3 py-1 rounded"
+              >
+                Agregar repuesto desde inventario
+              </button>
+              <button
+                onClick={() => addManualItem("repuesto")}
+                className="bg-green-500 text-white px-3 py-1 rounded"
+              >
+                Agregar repuesto manual
+              </button>
             </div>
 
             {/* Tabla de items */}
@@ -190,17 +271,44 @@ const QuotationsPage = () => {
                   <tr key={idx}>
                     <td className="border p-2">{item.tipo}</td>
                     <td className="border p-2">
-                      <input value={item.descripcion} onChange={(e) => handleItemChange(idx, "descripcion", e.target.value)} className="border p-1 w-full" />
+                      <input
+                        value={item.descripcion}
+                        onChange={(e) =>
+                          handleItemChange(idx, "descripcion", e.target.value)
+                        }
+                        className="border p-1 w-full"
+                      />
                     </td>
                     <td className="border p-2">
-                      <input type="number" value={item.cantidad} onChange={(e) => handleItemChange(idx, "cantidad", e.target.value)} className="border p-1 w-16" />
+                      <input
+                        type="number"
+                        value={item.cantidad}
+                        onChange={(e) =>
+                          handleItemChange(idx, "cantidad", e.target.value)
+                        }
+                        className="border p-1 w-16"
+                      />
                     </td>
                     <td className="border p-2">
-                      <input type="number" value={item.precio} onChange={(e) => handleItemChange(idx, "precio", e.target.value)} className="border p-1 w-24" />
+                      <input
+                        type="number"
+                        value={item.precio}
+                        onChange={(e) =>
+                          handleItemChange(idx, "precio", e.target.value)
+                        }
+                        className="border p-1 w-24"
+                      />
                     </td>
-                    <td className="border p-2">{(item.cantidad * item.precio).toFixed(2)}</td>
                     <td className="border p-2">
-                      <button onClick={() => removeItem(idx)} className="bg-red-500 text-white px-2 py-1 rounded">X</button>
+                      {(item.cantidad * item.precio).toFixed(2)}
+                    </td>
+                    <td className="border p-2">
+                      <button
+                        onClick={() => removeItem(idx)}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        X
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -208,8 +316,8 @@ const QuotationsPage = () => {
             </table>
 
             {/* Botón descuento */}
-            <button 
-              onClick={applyDiscount} 
+            <button
+              onClick={applyDiscount}
               className="bg-yellow-500 text-white px-4 py-2 rounded"
             >
               Aplicar Descuento
@@ -222,8 +330,59 @@ const QuotationsPage = () => {
               <p className="font-bold">Total: ${total.toFixed(2)}</p>
             </div>
 
-            {/* Guardar */}
-            <button onClick={handleSubmit} className="bg-indigo-600 text-white px-4 py-2 rounded">Guardar Cotización</button>
+            <div className="flex gap-2 justify-end">
+              {/* Guardar */}
+              <button
+                onClick={handleSubmit}
+                className="bg-indigo-600 text-white px-4 py-2 rounded"
+              >
+                Guardar Cotización
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-gray-600 text-white px-4 py-2 rounded"
+              >
+                Imprimir
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const payload = {
+                      ...form,
+                      items,
+                      subtotal,
+                      discount,
+                      total,
+                    };
+                    const res = await axios.post(
+                      "/api/quotations/pdf",
+                      payload,
+                      {
+                        responseType: "blob", // para recibir archivo
+                      }
+                    );
+                    // Descargar automáticamente el PDF en el navegador
+                    const url = window.URL.createObjectURL(
+                      new Blob([res.data])
+                    );
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.setAttribute(
+                      "download",
+                      `cotizacion_${form.cliente}.pdf`
+                    );
+                    document.body.appendChild(link);
+                    link.click();
+                  } catch (err) {
+                    console.error(err);
+                    alert("Error al generar el PDF");
+                  }
+                }}
+                className="bg-red-600 text-white px-4 py-2 rounded"
+              >
+                Enviar como PDF
+              </button>
+            </div>
           </div>
         </main>
       </div>

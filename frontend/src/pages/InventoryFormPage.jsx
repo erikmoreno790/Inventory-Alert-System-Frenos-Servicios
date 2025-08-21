@@ -4,8 +4,6 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 
-// ... imports sin cambios
-
 const InventoryFormPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -25,7 +23,6 @@ const InventoryFormPage = () => {
 
   const [categorias, setCategorias] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -54,7 +51,6 @@ const InventoryFormPage = () => {
   // ✅ Si hay ID, cargar datos del producto para edición
   useEffect(() => {
     const fetchProducto = async () => {
-      if (!id) return setLoading(false);
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const res = await axios.get(
@@ -73,8 +69,6 @@ const InventoryFormPage = () => {
         });
       } catch (err) {
         console.error("Error cargando producto:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -116,8 +110,6 @@ const InventoryFormPage = () => {
     }
   };
 
-  if (loading) return <div className="p-6 text-gray-600">Cargando...</div>;
-
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -132,7 +124,7 @@ const InventoryFormPage = () => {
           <div className="p-6 max-w-4xl mx-auto">
             <div className="flex flex-wrap justify-between items-center border-b pb-4 mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
-                Nuevo repuesto
+                Información del Repuesto/Item
               </h2>
               <div className="flex gap-2">
                 <button
@@ -278,4 +270,3 @@ const InventoryFormPage = () => {
 };
 
 export default InventoryFormPage;
-

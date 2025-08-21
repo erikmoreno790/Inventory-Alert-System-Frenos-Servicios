@@ -89,7 +89,7 @@ const ServiceOrderFormPage = () => {
           <div className="p-6 max-w-4xl mx-auto">
             <div className="flex flex-wrap justify-between items-center border-b pb-4 mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
-                Nuevo servicio
+                Información del Servicio
               </h2>
               <div className="flex gap-2">
                 <button

@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const serviceOrderRoutes = require('./routes/serviceOrderRoutes');
+const quotationRoutes = require('./routes/quotationRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/service-orders', serviceOrderRoutes);
+app.use('/api/quotations', quotationRoutes);
 
 
 const PORT = process.env.PORT || 3000;
