@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import { useNavigate } from "react-router-dom";
+import api from "../api"; 
 
 const QuotationsPage = () => {
   const [form, setForm] = useState({
@@ -51,8 +51,8 @@ const QuotationsPage = () => {
     const fetchData = async () => {
       try {
         const [servicesRes, inventoryRes] = await Promise.all([
-          axios.get("/api/services"),
-          axios.get("/api/products"),
+          api.get("/services"),
+          api.get("/products"),
         ]);
         setServicesList(servicesRes.data);
         setInventoryList(inventoryRes.data);
@@ -112,7 +112,7 @@ const QuotationsPage = () => {
   const handleSubmit = async () => {
     try {
       const payload = { ...form, items, subtotal, discount, total };
-      await axios.post("/api/quotations", payload);
+      await api.post("quotations", payload);
       alert("Cotización guardada con éxito");
       setForm({
         cliente: "",

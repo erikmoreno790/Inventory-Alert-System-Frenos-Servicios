@@ -8,7 +8,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import axios from "axios";
+import api from "../api";
 
 const TopNavbar = ({ onToggleSidebar }) => {
   const [userName, setUserName] = useState("Usuario");
@@ -21,8 +21,8 @@ const TopNavbar = ({ onToggleSidebar }) => {
       if (!token) return;
 
       try {
-        const response = await axios.get(
-          "http://localhost:3000/api/auth/validate",
+        const response = await api.get(
+          "/auth/validate",
           {
             headers: { Authorization: `Bearer ${token}` },
           }

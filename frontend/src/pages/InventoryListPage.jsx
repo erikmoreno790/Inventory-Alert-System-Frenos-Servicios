@@ -1,7 +1,7 @@
 //Tabla con filtros para ver todos los repuestos (nombre, stock, categoría, ubicación...).
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -22,7 +22,7 @@ const InventoryListPage = () => {
   useEffect(() => {
     const fetchInventario = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/products', {
+        const response = await api.get('/products', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

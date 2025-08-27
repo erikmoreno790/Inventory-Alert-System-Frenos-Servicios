@@ -25,7 +25,7 @@ const MovementsHistoryPage = () => {
       if (filters.fecha_inicio) params.fecha_inicio = filters.fecha_inicio;
       if (filters.fecha_fin) params.fecha_fin = filters.fecha_fin;
 
-      const res = await axios.get('http://localhost:3000/api/inventory/movements', {
+      const res = await api.get('/inventory/movements', {
         ...config,
         params,
       });
@@ -39,7 +39,7 @@ const MovementsHistoryPage = () => {
 
   const fetchProductos = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/products', {
+      const res = await api.get('/products', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setProductos(res.data);

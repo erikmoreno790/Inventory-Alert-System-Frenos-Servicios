@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 
@@ -19,7 +19,7 @@ const UsePartsPage = () => {
   useEffect(() => {
     const fetchParts = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/products", {
+        const res = await api.get("/products", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAllParts(res.data);
@@ -61,8 +61,8 @@ const UsePartsPage = () => {
         navigate("/inventario/nuevo");
       } else {
         try {
-          const res = await axios.post(
-            "http://localhost:3000/api/products/minimal",
+          const res = await api.post(
+            "/products/minimal",
             { nombre: parts[index].nombre },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -96,8 +96,8 @@ const UsePartsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        `http://localhost:3000/api/service-orders/${id}/used-parts`,
+      await api.post(
+        `/service-orders/${id}/used-parts`,
         { parts },
         { headers: { Authorization: `Bearer ${token}` } }
       );

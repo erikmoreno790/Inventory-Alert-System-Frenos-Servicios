@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from '../api'
 
 const EditarServicio = () => {
   const { id } = useParams();
@@ -33,8 +33,8 @@ const EditarServicio = () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const res = await axios.get(
-          `http://localhost:3000/api/service-orders/${id}`,
+        const res = await api.get(
+          `/service-orders/${id}`,
           config
         );
 
@@ -73,8 +73,8 @@ const EditarServicio = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(
-        `http://localhost:3000/api/service-orders/${id}`,
+      await api.put(
+        `/service-orders/${id}`,
         formData
       );
       navigate("/ordenes-servicio");

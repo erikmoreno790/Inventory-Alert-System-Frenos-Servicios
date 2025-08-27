@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../api';
 
 const EntriesPage = () => {
   const [productos, setProductos] = useState([]);
@@ -18,7 +18,7 @@ const EntriesPage = () => {
     const fetchProductos = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('http://localhost:3000/api/products', config);
+        const res = await api.get('products', config);
         setProductos(res.data);
       } catch (err) {
         console.error('Error al cargar productos:', err);
@@ -44,7 +44,7 @@ const EntriesPage = () => {
           'Content-Type': 'application/json',
         },
       };
-      await axios.post('http://localhost:3000/api/inventory/entries', form, config);
+      await api.post('/inventory/entries', form, config);
       navigate('/inventario');
     } catch (err) {
       console.error('Error al registrar entrada:', err.response?.data || err.message);

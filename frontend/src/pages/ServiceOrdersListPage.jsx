@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from "../api";
 
 const ServiceOrdersListPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,8 +24,8 @@ const ServiceOrdersListPage = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        "http://localhost:3000/api/service-orders",
+      const response = await api.get(
+        "/service-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,

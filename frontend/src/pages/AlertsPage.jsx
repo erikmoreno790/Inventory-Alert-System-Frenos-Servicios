@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { format } from "date-fns";
 import { AlertCircle, Clock, AlertTriangle } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from '../api'
 
 const AlertsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -18,8 +18,8 @@ const AlertsPage = () => {
   const fetchAlertas = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        "http://localhost:3000/api/inventory/alerts",
+      const res = await api.get(
+        "inventory/alerts",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

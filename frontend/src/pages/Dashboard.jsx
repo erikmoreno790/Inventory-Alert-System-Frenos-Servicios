@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Bell, Boxes, AlertTriangle, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from '../api'
 
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,8 +28,8 @@ const DashboardPage = () => {
         };
 
         const [productosRes, alertasRes] = await Promise.all([
-          axios.get("http://localhost:3000/api/products", config),
-          axios.get("http://localhost:3000/api/alerts", config), // Ajusta si tu ruta es diferente
+          api.get("/products", config),
+          api.get("/alerts", config), // Ajusta si tu ruta es diferente
         ]);
 
         const productos = productosRes.data;

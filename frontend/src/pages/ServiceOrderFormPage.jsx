@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from "../api";
 
 const ServiceOrderFormPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -56,8 +56,8 @@ const ServiceOrderFormPage = () => {
 
     try {
       console.log("Intento de enviar datos: ", dataToSend);
-      const response = await axios.post(
-        "http://localhost:3000/api/service-orders",
+      const response = await api.post(
+        "/service-orders",
         dataToSend,
         {
           headers: {

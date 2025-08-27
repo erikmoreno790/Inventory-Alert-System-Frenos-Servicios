@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
+import api from '../api'
 
 const InventoryFormPage = () => {
   const navigate = useNavigate();
@@ -34,8 +34,8 @@ const InventoryFormPage = () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [catRes, provRes] = await Promise.all([
-          axios.get("http://localhost:3000/api/products/categorias", config),
-          axios.get("http://localhost:3000/api/products/proveedores", config),
+          api.get("products/categorias", config),
+          api.get("products/proveedores", config),
         ]);
 
         setCategorias(catRes.data); // [{id_categoria, nombre}, ...]
@@ -53,8 +53,8 @@ const InventoryFormPage = () => {
     const fetchProducto = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get(
-          `http://localhost:3000/api/products/${id}`,
+        const res = await api.get(
+          `products/${id}`,
           config
         );
         setForm({
@@ -93,13 +93,13 @@ const InventoryFormPage = () => {
 
     try {
       if (id) {
-        await axios.put(
-          `http://localhost:3000/api/products/${id}`,
+        await api.put(
+          `/products/${id}`,
           form,
           config
         );
       } else {
-        await axios.post("http://localhost:3000/api/products", form, config);
+        await api.post("/products", form, config);
       }
       navigate("/inventario");
     } catch (err) {

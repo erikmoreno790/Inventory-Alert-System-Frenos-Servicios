@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
 import { ArrowLeft, AlertTriangle, History } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import TopNavbar from '../components/TopNavbar';
+import api from '../api'
 
 const InventoryDetailPage = () => {
   const { id } = useParams();
@@ -24,9 +24,9 @@ const InventoryDetailPage = () => {
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
         const [prodRes, movRes, alertasRes] = await Promise.all([
-          axios.get(`http://localhost:3000/api/products/${id}`, config),
-          axios.get(`http://localhost:3000/api/products/movimientos/${id}`, config),
-          axios.get(`http://localhost:3000/api/alerts/products/${id}`, config),
+          api.get(`/products/${id}`, config),
+          api.get(`/products/movimientos/${id}`, config),
+          api.get(`/alerts/products/${id}`, config),
         ]);
 
         setProducto(prodRes.data);
