@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import api from "../api";
@@ -7,7 +8,9 @@ import api from "../api";
 const ServiceOrderFormPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const location = useLocation();
+
+  const initialData = location.state || {
     placa: "",
     vehiculo: "",
     modelo: "",
@@ -19,7 +22,9 @@ const ServiceOrderFormPage = () => {
     fecha_servicio: "",
     mecanicos: "",
     fotos: [],
-  });
+  };
+
+  const [formData, setFormData] = useState(initialData);
 
   const token = localStorage.getItem("token");
 
@@ -56,16 +61,12 @@ const ServiceOrderFormPage = () => {
 
     try {
       console.log("Intento de enviar datos: ", dataToSend);
-      const response = await api.post(
-        "/service-orders",
-        dataToSend,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.post("/service-orders", dataToSend, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const nuevaOrdenId = response.data.id_service_order || response.data._id;
       navigate(`/use-parts/${nuevaOrdenId}`);

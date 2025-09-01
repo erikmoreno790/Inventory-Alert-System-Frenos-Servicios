@@ -2,10 +2,16 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import { useNavigate } from "react-router-dom";
-import api from "../api"; 
+import api from "../api";
 
 const QuotationsPage = () => {
-  const [form, setForm] = useState({
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const [setForm] = useState({});
+  const [setItems] = useState([]);
+
+  // 🔹 Un solo estado para todo
+  const [formData, setFormData] = useState({
     cliente: "",
     nit: "",
     telefono: "",
@@ -15,44 +21,51 @@ const QuotationsPage = () => {
     modelo: "",
     kilometraje: "",
     fechaVencimiento: "",
+    items: [],
+    discountPercent: 0,
+    subtotal: 0,
+    discount: 0,
+    total: 0,
+    empresa: {
+      nombre: "Frenos & Servicios",
+      direccion: "Calle 123, Barranquilla",
+      telefono: "3001234567",
+      email: "contacto@test.com",
+      redes: "@frenosyservicios",
+    },
   });
 
-  const [items, setItems] = useState([]);
   const [servicesList, setServicesList] = useState([]);
   const [inventoryList, setInventoryList] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [discount, setDiscount] = useState(0);
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const navigate = useNavigate();
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  const calculateSubtotal = () =>
-    items.reduce((sum, item) => sum + item.cantidad * item.precio, 0);
-
-  const applyDiscount = () => {
-    const input = prompt(
-      "Ingrese el descuento en porcentaje (ej: 10 para 10%)"
+  // 🔹 Recalcular subtotal, descuento y total automáticamente
+  useEffect(() => {
+    const subtotal = formData.items.reduce(
+      (sum, item) => sum + item.cantidad * item.precio,
+      0
     );
-    if (!input) return;
+    const discount = (subtotal * formData.discountPercent) / 100;
+    const total = subtotal - discount;
 
-    const percent = parseFloat(input.trim());
-    if (!isNaN(percent) && percent >= 0 && percent <= 100) {
-      setDiscountPercent(percent);
-    } else {
-      alert("Por favor ingrese un número válido entre 0 y 100");
-    }
-  };
+    setFormData((prev) => ({
+      ...prev,
+      subtotal,
+      discount,
+      total,
+    }));
+  }, [formData.items, formData.discountPercent]);
 
-  // Cargar datos del backend
+  // 🔹 Cargar datos del backend
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         const [servicesRes, inventoryRes] = await Promise.all([
-          api.get("/services"),
-          api.get("/products"),
+          api.get("/service-orders", config),
+          api.get("/products", config),
         ]);
         setServicesList(servicesRes.data);
         setInventoryList(inventoryRes.data);
@@ -63,15 +76,19 @@ const QuotationsPage = () => {
     fetchData();
   }, []);
 
-  const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // 🔹 Handlers
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const addManualItem = (tipo) => {
-    setItems([
-      ...items,
-      { tipo, descripcion: "", cantidad: 1, precio: 0, origen: "manual" },
-    ]);
+    setFormData((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { tipo, descripcion: "", cantidad: 1, precio: 0, origen: "manual" },
+      ],
+    }));
   };
 
   const addFromList = (tipo) => {
@@ -82,39 +99,52 @@ const QuotationsPage = () => {
     );
     const itemData = list.find((el) => el.id.toString() === selected);
     if (itemData) {
-      setItems([
-        ...items,
-        {
-          tipo,
-          descripcion: itemData.nombre,
-          cantidad: 1,
-          precio: itemData.precio || 0,
-          origen: "lista",
-        },
-      ]);
+      setFormData((prev) => ({
+        ...prev,
+        items: [
+          ...prev.items,
+          {
+            tipo,
+            descripcion: itemData.nombre,
+            cantidad: 1,
+            precio: itemData.precio || 0,
+            origen: "lista",
+          },
+        ],
+      }));
     }
   };
 
   const handleItemChange = (index, field, value) => {
-    const newItems = [...items];
+    const newItems = [...formData.items];
     newItems[index][field] =
       field === "cantidad" || field === "precio" ? Number(value) : value;
-    setItems(newItems);
+    setFormData({ ...formData, items: newItems });
   };
 
   const removeItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
+    setFormData({
+      ...formData,
+      items: formData.items.filter((_, i) => i !== index),
+    });
   };
 
-  const subtotal = calculateSubtotal();
-  const total = subtotal - discount;
+  const applyDiscount = () => {
+    const input = prompt("Ingrese el descuento en porcentaje (0-100):");
+    if (!input) return;
+    const percent = parseFloat(input.trim());
+    if (!isNaN(percent) && percent >= 0 && percent <= 100) {
+      setFormData({ ...formData, discountPercent: percent });
+    } else {
+      alert("Por favor ingrese un número válido");
+    }
+  };
 
   const handleSubmit = async () => {
     try {
-      const payload = { ...form, items, subtotal, discount, total };
-      await api.post("quotations", payload);
+      await api.post("quotations", formData);
       alert("Cotización guardada con éxito");
-      setForm({
+      setFormData({
         cliente: "",
         nit: "",
         telefono: "",
@@ -124,19 +154,56 @@ const QuotationsPage = () => {
         modelo: "",
         kilometraje: "",
         fechaVencimiento: "",
+        items: [],
+        discountPercent: 0,
+        subtotal: 0,
+        discount: 0,
+        total: 0,
+        empresa: formData.empresa,
       });
-      setItems([]);
-      setDiscount(0);
     } catch (err) {
       console.error(err);
       alert("Error al guardar la cotización");
     }
   };
 
+  const handlePrint = () => {
+    // 🔹 Guardar temporalmente en localStorage
+    localStorage.setItem("currentQuotation", JSON.stringify(formData));
+
+    // 🔹 Navegar sin necesidad de pasar state
+    navigate("/cotizacion/pdf");
+  };
+
+  useEffect(() => {
+    const savedQuotation = localStorage.getItem("currentQuotation");
+    if (savedQuotation) {
+      const data = JSON.parse(savedQuotation);
+      setForm(data);
+      setItems(data.items || []);
+    }
+  }, []);
+
+  const handleCrearOrden = () => {
+    const quotationData = {
+      placa: formData.placa,
+      vehiculo: formData.vehiculo,
+      modelo: formData.modelo,
+      cliente: formData.cliente,
+      nit: formData.nit,
+      telefono: formData.telefono,
+      email: formData.email,
+      kilometraje: formData.kilometraje,
+      fecha_servicio: new Date().toISOString().split("T")[0],
+      mecanicos: "",
+      fotos: [],
+    };
+    navigate("/service-order/new", { state: quotationData });
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div
         className={`flex-1 ${
           sidebarOpen ? "ml-64" : ""
@@ -145,119 +212,80 @@ const QuotationsPage = () => {
         <TopNavbar onToggleSidebar={toggleSidebar} />
         <main>
           <div className="p-6 max-w-4xl mx-auto">
-            <div className="flex flex-wrap justify-between items-center border-b pb-4 mb-6">
+            <div className="flex justify-between items-center border-b pb-4 mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
                 Nueva cotización
               </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Regresar
-                </button>
-              </div>
+              <button
+                onClick={() => navigate(-1)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+              >
+                Regresar
+              </button>
             </div>
 
-            {/* Datos del cliente */}
+            {/* Campos cliente */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <input
-                name="cliente"
-                value={form.cliente}
-                onChange={handleFormChange}
-                placeholder="Cliente / Empresa"
-                className="border p-2"
-              />
-              <input
-                name="nit"
-                value={form.nit}
-                onChange={handleFormChange}
-                placeholder="NIT / CC"
-                className="border p-2"
-              />
-              <input
-                name="telefono"
-                value={form.telefono}
-                onChange={handleFormChange}
-                placeholder="Teléfono"
-                className="border p-2"
-              />
-              <input
-                name="email"
-                value={form.email}
-                onChange={handleFormChange}
-                placeholder="Email"
-                className="border p-2"
-              />
-              <input
-                name="placa"
-                value={form.placa}
-                onChange={handleFormChange}
-                placeholder="Placa"
-                className="border p-2"
-              />
-              <input
-                name="vehiculo"
-                value={form.vehiculo}
-                onChange={handleFormChange}
-                placeholder="Vehículo"
-                className="border p-2"
-              />
-              <input
-                name="modelo"
-                value={form.modelo}
-                onChange={handleFormChange}
-                placeholder="Modelo"
-                className="border p-2"
-              />
-              <input
-                name="kilometraje"
-                value={form.kilometraje}
-                onChange={handleFormChange}
-                placeholder="Kilometraje"
-                className="border p-2"
-              />
+              {[
+                "cliente",
+                "nit",
+                "telefono",
+                "email",
+                "placa",
+                "vehiculo",
+                "modelo",
+                "kilometraje",
+              ].map((field) => (
+                <input
+                  key={field}
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleChange}
+                  placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                  className="border p-2"
+                />
+              ))}
               <input
                 type="date"
                 name="fechaVencimiento"
-                value={form.fechaVencimiento}
-                onChange={handleFormChange}
+                value={formData.fechaVencimiento}
+                onChange={handleChange}
                 className="border p-2"
               />
             </div>
 
-            {/* Botones de agregar */}
+            {/* Botones agregar */}
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => addFromList("servicio")}
                 className="bg-blue-500 text-white px-3 py-1 rounded"
               >
-                Agregar servicio desde lista
+                Servicio desde lista
               </button>
               <button
                 onClick={() => addManualItem("servicio")}
                 className="bg-green-500 text-white px-3 py-1 rounded"
               >
-                Agregar servicio manual
+                Servicio manual
               </button>
               <button
                 onClick={() => addFromList("repuesto")}
                 className="bg-blue-500 text-white px-3 py-1 rounded"
               >
-                Agregar repuesto desde inventario
+                Repuesto desde inventario
               </button>
               <button
                 onClick={() => addManualItem("repuesto")}
                 className="bg-green-500 text-white px-3 py-1 rounded"
               >
-                Agregar repuesto manual
+                Repuesto manual
               </button>
             </div>
 
-            {/* Tabla de items */}
+            {/* Tabla de ítems */}
             <table className="w-full border mb-4">
-              <thead>
-                <tr className="bg-gray-200">
+              <thead className="bg-gray-200">
+                <tr>
                   <th className="border p-2">Tipo</th>
                   <th className="border p-2">Descripción</th>
                   <th className="border p-2">Cantidad</th>
@@ -267,7 +295,7 @@ const QuotationsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, idx) => (
+                {formData.items.map((item, idx) => (
                   <tr key={idx}>
                     <td className="border p-2">{item.tipo}</td>
                     <td className="border p-2">
@@ -315,23 +343,25 @@ const QuotationsPage = () => {
               </tbody>
             </table>
 
-            {/* Botón descuento */}
+            {/* Descuento */}
             <button
               onClick={applyDiscount}
-              className="bg-yellow-500 text-white px-4 py-2 rounded"
+              className="bg-yellow-500 text-white px-4 py-2 rounded mb-4"
             >
               Aplicar Descuento
             </button>
 
             {/* Totales */}
             <div className="text-right mb-4">
-              <p>Subtotal: ${subtotal.toFixed(2)}</p>
-              {discount > 0 && <p>Descuento: -${discount.toFixed(2)}</p>}
-              <p className="font-bold">Total: ${total.toFixed(2)}</p>
+              <p>Subtotal: ${formData.subtotal.toFixed(2)}</p>
+              {formData.discount > 0 && (
+                <p>Descuento: -${formData.discount.toFixed(2)}</p>
+              )}
+              <p className="font-bold">Total: ${formData.total.toFixed(2)}</p>
             </div>
 
+            {/* Botones finales */}
             <div className="flex gap-2 justify-end">
-              {/* Guardar */}
               <button
                 onClick={handleSubmit}
                 className="bg-indigo-600 text-white px-4 py-2 rounded"
@@ -339,48 +369,16 @@ const QuotationsPage = () => {
                 Guardar Cotización
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="bg-gray-600 text-white px-4 py-2 rounded"
               >
                 Imprimir
               </button>
               <button
-                onClick={async () => {
-                  try {
-                    const payload = {
-                      ...form,
-                      items,
-                      subtotal,
-                      discount,
-                      total,
-                    };
-                    const res = await axios.post(
-                      "/api/quotations/pdf",
-                      payload,
-                      {
-                        responseType: "blob", // para recibir archivo
-                      }
-                    );
-                    // Descargar automáticamente el PDF en el navegador
-                    const url = window.URL.createObjectURL(
-                      new Blob([res.data])
-                    );
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.setAttribute(
-                      "download",
-                      `cotizacion_${form.cliente}.pdf`
-                    );
-                    document.body.appendChild(link);
-                    link.click();
-                  } catch (err) {
-                    console.error(err);
-                    alert("Error al generar el PDF");
-                  }
-                }}
-                className="bg-red-600 text-white px-4 py-2 rounded"
+                onClick={handleCrearOrden}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
               >
-                Enviar como PDF
+                Crear Orden
               </button>
             </div>
           </div>

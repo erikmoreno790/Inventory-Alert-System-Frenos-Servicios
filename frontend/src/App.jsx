@@ -9,6 +9,7 @@ import ExitsPage from "./pages/ExitsPage";
 import MovementsHistoryPage from "./pages/MovementsHistoryPage";
 import AlertsPage from "./pages/AlertsPage";
 import QuotationsPage from "./pages/QuotationsPage";
+import QuotationPDFView from "./pages/QuotationPDFView";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import ServiceOrderFormPage from "./pages/ServiceOrderFormPage";
 import ServiceOdersListPage from "./pages/ServiceOrdersListPage";
@@ -97,6 +98,14 @@ function App() {
           element={
             <PrivateRoute>
               <QuotationsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cotizacion/pdf"
+          element={
+            <PrivateRoute>
+              <QuotationPDFView />
             </PrivateRoute>
           }
         />

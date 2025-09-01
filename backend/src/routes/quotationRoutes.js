@@ -10,7 +10,6 @@ router.use(authenticate);
 router.post("/", authorize("admin", "user"), quotationController.newQuotation);
 router.get("/", authorize("admin", "user"), quotationController.getAll);
 router.get("/:id", authorize("admin", "user"), quotationController.getById);
-router.get("/pdf", authorize("admin", "user"), quotationController.downloadQuotationPDF);
 
 // Exportar el router
 module.exports = router;

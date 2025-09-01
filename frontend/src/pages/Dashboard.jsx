@@ -3,7 +3,7 @@ import { Bell, Boxes, AlertTriangle, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
-import api from '../api'
+import api from "../api";
 
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
