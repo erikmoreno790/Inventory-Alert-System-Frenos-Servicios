@@ -7,8 +7,7 @@ import api from "../api";
 const QuotationsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const [setForm] = useState({});
-  const [setItems] = useState([]);
+
 
   // 🔹 Un solo estado para todo
   const [formData, setFormData] = useState({
@@ -76,10 +75,21 @@ const QuotationsPage = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+  localStorage.setItem("currentQuotation", JSON.stringify(formData));
+}, [formData]);
+
   // 🔹 Handlers
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+  const savedQuotation = localStorage.getItem("currentQuotation");
+  if (savedQuotation) {
+    setFormData(JSON.parse(savedQuotation));
+  }
+}, []);
 
   const addManualItem = (tipo) => {
     setFormData((prev) => ({
@@ -176,13 +186,16 @@ const QuotationsPage = () => {
   };
 
   useEffect(() => {
-    const savedQuotation = localStorage.getItem("currentQuotation");
-    if (savedQuotation) {
-      const data = JSON.parse(savedQuotation);
-      setForm(data);
-      setItems(data.items || []);
-    }
-  }, []);
+  const savedQuotation = localStorage.getItem("currentQuotation");
+  if (savedQuotation) {
+    setFormData(JSON.parse(savedQuotation));
+  }
+}, []);
+
+// useEffect para guardar en localStorage cada vez que cambie el formulario
+useEffect(() => {
+  localStorage.setItem("currentQuotation", JSON.stringify(formData));
+}, [formData]);
 
   const handleCrearOrden = () => {
     const quotationData = {
