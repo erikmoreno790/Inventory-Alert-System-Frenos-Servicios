@@ -121,19 +121,18 @@ const QuotationsHistoryPage = () => {
                         </td>
                         <td className="border px-2 py-1 text-center space-x-2">
                           <Link
-                            to={`/ordenes-servicio/${quotation.id_service_order}`}
+                            to={`/cotizacion/${quotation.id_service_order}`}
                             className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
                           >
                             Ver
                           </Link>
                           <Link
-                            to={`/use-parts/${quotation.id_service_order}`}
-                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
-                          >
-                            Usar Repuestos
-                          </Link>
-                          <Link
                             to={`/ordenes-servicio/edit/${quotation.id_service_order}`}
+                            TODO:cambiar
+                            ruta
+                            a
+                            editar
+                            cotización
                             className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs"
                           >
                             Editar

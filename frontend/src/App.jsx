@@ -11,6 +11,7 @@ import AlertsPage from "./pages/AlertsHistoryPage";
 import QuotationPage from "./pages/QuotationPage";
 import QuotationPDFView from "./pages/QuotationPDFView";
 import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
+import QuotationDetailPage from "./pages/QuotationDetailPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import ServiceOrderFormPage from "./pages/ServiceOrderFormPage";
 import ServiceOdersListPage from "./pages/ServiceOrdersHistoryPage";
@@ -99,6 +100,14 @@ function App() {
           element={
             <PrivateRoute>
               <QuotationPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cotizacion/:id"
+          element={
+            <PrivateRoute>
+              <QuotationDetailPage />
             </PrivateRoute>
           }
         />
