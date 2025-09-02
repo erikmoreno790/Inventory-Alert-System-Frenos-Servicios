@@ -27,7 +27,16 @@ const Sidebar = () => {
 
   const links = [
     { to: "/dashboard", label: "Dashboard", icon: <Home size={18} /> },
-    { to: "/cotizacion", label: "Cotización", icon: <Wrench size={18} /> },
+    {
+      to: "/cotizacion",
+      label: "Nueva Cotización",
+      icon: <Wrench size={18} />,
+    },
+    {
+      to: "/historial-cotizaciones",
+      label: "Historial de Cotizaciones",
+      icon: <FileText size={18} />,
+    },
     {
       to: "/inventario/nuevo",
       label: "Nuevo Repuesto",

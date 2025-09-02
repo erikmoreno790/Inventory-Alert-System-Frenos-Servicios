@@ -7,12 +7,13 @@ import InventoryDetailPage from "./pages/InventoryDetailPage";
 import EntriesPage from "./pages/EntriesPage";
 import ExitsPage from "./pages/ExitsPage";
 import MovementsHistoryPage from "./pages/MovementsHistoryPage";
-import AlertsPage from "./pages/AlertsPage";
-import QuotationsPage from "./pages/QuotationsPage";
+import AlertsPage from "./pages/AlertsHistoryPage";
+import QuotationPage from "./pages/QuotationPage";
 import QuotationPDFView from "./pages/QuotationPDFView";
+import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import ServiceOrderFormPage from "./pages/ServiceOrderFormPage";
-import ServiceOdersListPage from "./pages/ServiceOrdersListPage";
+import ServiceOdersListPage from "./pages/ServiceOrdersHistoryPage";
 import ServiceOrderDetailPage from "./pages/ServiceOrderDetailPage";
 import EditServiceOrderPage from "./pages/EditServiceOrderPage";
 import UserPartsPage from "./pages/UserPartsPage";
@@ -97,7 +98,7 @@ function App() {
           path="/cotizacion"
           element={
             <PrivateRoute>
-              <QuotationsPage />
+              <QuotationPage />
             </PrivateRoute>
           }
         />
@@ -109,6 +110,15 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/historial-cotizaciones"
+          element={
+            <PrivateRoute>
+              <QuotationsHistoryPage />
+            </PrivateRoute>
+          }
+        />
+
         <Route
           path="/ordenes-servicio"
           element={

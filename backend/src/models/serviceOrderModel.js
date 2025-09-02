@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-const createServiceOrder = async ({ placa, vehiculo, modelo, cliente, nit, telefono, email, kilometraje, fecha_servicio, mecanicos, fotos }) => {
+/*const createServiceOrder = async ({ placa, vehiculo, modelo, cliente, nit, telefono, email, kilometraje, fecha_servicio, mecanicos, fotos }) => {
 
     const res = await pool.query(
         `INSERT INTO service_orders (placa, vehiculo, modelo, cliente, nit, telefono, email, 
@@ -24,7 +24,7 @@ const createServiceOrder = async ({ placa, vehiculo, modelo, cliente, nit, telef
         await Promise.all(photoQueries);
     }
     return { id: orderId, ...res.rows[0] };
-}
+}*/
 
 const getAllServiceOrders = async () => {
     const res = await pool.query('SELECT * FROM service_orders ORDER BY id_service_order DESC');
@@ -63,10 +63,25 @@ const addUsedParts = async (idServiceOrder, usedParts) => {
     return results.map(res => res.rows[0]);
 };
 
+const createServiceOrder = async (client, quotation) => {
+    const { cliente, nit, telefono, email, placa, vehiculo, modelo } = quotation;
+
+    const res = await client.query(
+        `INSERT INTO service_orders 
+      (placa, vehiculo, modelo, cliente, nit, telefono, email, fecha_servicio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE)
+     RETURNING id_service_order`,
+        [placa, vehiculo, modelo, cliente, nit, telefono, email]
+    );
+
+    return res.rows[0].id_service_order;
+}
+
 module.exports = {
     createServiceOrder,
     getAllServiceOrders,
     getServiceOrderById,
     updateServiceOrder,
-    addUsedParts
+    addUsedParts,
+    createServiceOrder
 };

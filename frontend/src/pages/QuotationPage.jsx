@@ -1,62 +1,29 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  updateFormData,
+  updateItem,
+  addItem,
+  removeItem,
+  resetForm,
+  updateCalculations,
+} from "../components/quotationSlice";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
-import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 const QuotationsPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-
-
-  // 🔹 Un solo estado para todo
-  const [formData, setFormData] = useState({
-    cliente: "",
-    nit: "",
-    telefono: "",
-    email: "",
-    placa: "",
-    vehiculo: "",
-    modelo: "",
-    kilometraje: "",
-    fechaVencimiento: "",
-    items: [],
-    discountPercent: 0,
-    subtotal: 0,
-    discount: 0,
-    total: 0,
-    empresa: {
-      nombre: "Frenos & Servicios",
-      direccion: "Calle 123, Barranquilla",
-      telefono: "3001234567",
-      email: "contacto@test.com",
-      redes: "@frenosyservicios",
-    },
-  });
-
   const [servicesList, setServicesList] = useState([]);
   const [inventoryList, setInventoryList] = useState([]);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const formData = useSelector((state) => state.quotation);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // 🔹 Recalcular subtotal, descuento y total automáticamente
-  useEffect(() => {
-    const subtotal = formData.items.reduce(
-      (sum, item) => sum + item.cantidad * item.precio,
-      0
-    );
-    const discount = (subtotal * formData.discountPercent) / 100;
-    const total = subtotal - discount;
-
-    setFormData((prev) => ({
-      ...prev,
-      subtotal,
-      discount,
-      total,
-    }));
-  }, [formData.items, formData.discountPercent]);
-
-  // 🔹 Cargar datos del backend
+  // 🔹 Cargar servicios e inventario
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -70,35 +37,32 @@ const QuotationsPage = () => {
         setInventoryList(inventoryRes.data);
       } catch (err) {
         console.error(err);
+        alert("Error cargando datos iniciales");
       }
     };
     fetchData();
   }, []);
 
+  // 🔹 Recalcular totales
   useEffect(() => {
-  localStorage.setItem("currentQuotation", JSON.stringify(formData));
-}, [formData]);
+    dispatch(updateCalculations());
+  }, [formData.items, formData.discountPercent, dispatch]);
 
-  // 🔹 Handlers
+  // 🔹 Handlers locales
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    dispatch(updateFormData({ [e.target.name]: e.target.value }));
   };
 
-  useEffect(() => {
-  const savedQuotation = localStorage.getItem("currentQuotation");
-  if (savedQuotation) {
-    setFormData(JSON.parse(savedQuotation));
-  }
-}, []);
-
   const addManualItem = (tipo) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: [
-        ...prev.items,
-        { tipo, descripcion: "", cantidad: 1, precio: 0, origen: "manual" },
-      ],
-    }));
+    dispatch(
+      addItem({
+        tipo,
+        descripcion: "",
+        cantidad: 1,
+        precio: 0,
+        origen: "manual",
+      })
+    );
   };
 
   const addFromList = (tipo) => {
@@ -109,34 +73,32 @@ const QuotationsPage = () => {
     );
     const itemData = list.find((el) => el.id.toString() === selected);
     if (itemData) {
-      setFormData((prev) => ({
-        ...prev,
-        items: [
-          ...prev.items,
-          {
-            tipo,
-            descripcion: itemData.nombre,
-            cantidad: 1,
-            precio: itemData.precio || 0,
-            origen: "lista",
-          },
-        ],
-      }));
+      dispatch(
+        addItem({
+          tipo,
+          descripcion: itemData.nombre,
+          cantidad: 1,
+          precio: itemData.precio || 0,
+          origen: "lista",
+          productId: tipo === "repuesto" ? itemData.id : null, // Para validar stock
+        })
+      );
     }
   };
 
   const handleItemChange = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index][field] =
-      field === "cantidad" || field === "precio" ? Number(value) : value;
-    setFormData({ ...formData, items: newItems });
+    dispatch(
+      updateItem({
+        index,
+        field,
+        value:
+          field === "cantidad" || field === "precio" ? Number(value) : value,
+      })
+    );
   };
 
-  const removeItem = (index) => {
-    setFormData({
-      ...formData,
-      items: formData.items.filter((_, i) => i !== index),
-    });
+  const removeItemHandler = (index) => {
+    dispatch(removeItem(index));
   };
 
   const applyDiscount = () => {
@@ -144,74 +106,62 @@ const QuotationsPage = () => {
     if (!input) return;
     const percent = parseFloat(input.trim());
     if (!isNaN(percent) && percent >= 0 && percent <= 100) {
-      setFormData({ ...formData, discountPercent: percent });
+      dispatch(updateFormData({ discountPercent: percent }));
     } else {
       alert("Por favor ingrese un número válido");
     }
   };
 
+  // 🔹 Guardar cotización (crea cotización + ítems)
   const handleSubmit = async () => {
     try {
-      await api.post("quotations", formData);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      // 1. Crear cotización
+      const { data: quotation } = await api.post(
+        "/quotations",
+        {
+          cliente: formData.cliente,
+          nit: formData.nit,
+          telefono: formData.telefono,
+          email: formData.email,
+          placa: formData.placa,
+          vehiculo: formData.vehiculo,
+          modelo: formData.modelo,
+          kilometraje: formData.kilometraje,
+          fechaVencimiento: formData.fechaVencimiento,
+          discountPercent: formData.discountPercent,
+        },
+        config
+      );
+
+      // 2. Agregar ítems
+      for (const item of formData.items) {
+        await api.post(
+          `/quotations/${quotation.id}/items`,
+          {
+            tipo: item.tipo,
+            descripcion: item.descripcion,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            productId: item.productId || null, // Para validar stock
+          },
+          config
+        );
+      }
+
       alert("Cotización guardada con éxito");
-      setFormData({
-        cliente: "",
-        nit: "",
-        telefono: "",
-        email: "",
-        placa: "",
-        vehiculo: "",
-        modelo: "",
-        kilometraje: "",
-        fechaVencimiento: "",
-        items: [],
-        discountPercent: 0,
-        subtotal: 0,
-        discount: 0,
-        total: 0,
-        empresa: formData.empresa,
-      });
+      dispatch(resetForm());
+      navigate("/historial-cotizaciones");
     } catch (err) {
       console.error(err);
-      alert("Error al guardar la cotización");
+      alert(err.response?.data?.message || "Error al guardar la cotización");
     }
   };
 
   const handlePrint = () => {
-    // 🔹 Guardar temporalmente en localStorage
-    localStorage.setItem("currentQuotation", JSON.stringify(formData));
-
-    // 🔹 Navegar sin necesidad de pasar state
-    navigate("/cotizacion/pdf");
-  };
-
-  useEffect(() => {
-  const savedQuotation = localStorage.getItem("currentQuotation");
-  if (savedQuotation) {
-    setFormData(JSON.parse(savedQuotation));
-  }
-}, []);
-
-// useEffect para guardar en localStorage cada vez que cambie el formulario
-useEffect(() => {
-  localStorage.setItem("currentQuotation", JSON.stringify(formData));
-}, [formData]);
-
-  const handleCrearOrden = () => {
-    const quotationData = {
-      placa: formData.placa,
-      vehiculo: formData.vehiculo,
-      modelo: formData.modelo,
-      cliente: formData.cliente,
-      nit: formData.nit,
-      telefono: formData.telefono,
-      email: formData.email,
-      kilometraje: formData.kilometraje,
-      fecha_servicio: new Date().toISOString().split("T")[0],
-      mecanicos: "",
-      fotos: [],
-    };
-    navigate("/service-order/new", { state: quotationData });
+    navigate("/cotizacion/pdf", { state: formData });
   };
 
   return (
@@ -304,7 +254,7 @@ useEffect(() => {
                   <th className="border p-2">Cantidad</th>
                   <th className="border p-2">Precio</th>
                   <th className="border p-2">Subtotal</th>
-                  <th className="border p-2">Acciones</th>
+                  <th className="border p-2">Eliminar</th>
                 </tr>
               </thead>
               <tbody>
@@ -345,7 +295,7 @@ useEffect(() => {
                     </td>
                     <td className="border p-2">
                       <button
-                        onClick={() => removeItem(idx)}
+                        onClick={() => removeItemHandler(idx)}
                         className="bg-red-500 text-white px-2 py-1 rounded"
                       >
                         X
@@ -386,12 +336,6 @@ useEffect(() => {
                 className="bg-gray-600 text-white px-4 py-2 rounded"
               >
                 Imprimir
-              </button>
-              <button
-                onClick={handleCrearOrden}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Crear Orden
               </button>
             </div>
           </div>

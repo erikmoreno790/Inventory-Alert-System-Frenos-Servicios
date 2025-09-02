@@ -45,6 +45,7 @@ const updateProduct = async (id, data) => {
     return res.rows[0];
 };
 
+
 const deleteProduct = async (id) => {
     await pool.query('DELETE FROM products WHERE id_product = $1', [id]);
 };
@@ -55,6 +56,15 @@ const getLowStockProducts = async () => {
     );
     return res.rows;
 };
+
+const getStock = async (productId) => {
+    const res = await pool.query(
+        `SELECT stock_actual FROM products WHERE id_product = $1`,
+        [productId]
+    );
+    return res.rows[0]?.stock_actual ?? null;
+}
+
 
 // Funcion para actualizar el stock de un producto cuando se registra un movimiento (entrada o salida)
 const updateStock = async (id, cantidad, tipo, fecha, id_usuario, observaciones) => {
@@ -112,21 +122,21 @@ const getMovementsByProductId = async (id) => {
 };
 
 const getAllCategories = async () => {
-  const res = await pool.query(`
+    const res = await pool.query(`
     SELECT id_categoria, nombre
     FROM categorias
     ORDER BY nombre
   `);
-  return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
+    return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
 };
 
-const getAllProviders= async () => {
-  const res = await pool.query(`
+const getAllProviders = async () => {
+    const res = await pool.query(`
     SELECT id_categoria, nombre
     FROM categorias
     ORDER BY nombre
   `);
-  return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
+    return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
 };
 
 module.exports = {
@@ -136,6 +146,7 @@ module.exports = {
     updateProduct,
     deleteProduct,
     getLowStockProducts,
+    getStock,
     updateStock,
     getMovementsByProductId,
     getAllCategories,

@@ -1,5 +1,6 @@
-// importamos el modelo de cotización
 const quotationModel = require('../models/quotationModel');
+const { approveQuotation } = require('../services/quotationService');
+const { addItemToQuotation } = require('../services/quotationService');
 
 
 const newQuotation = async (req, res) => {
@@ -22,6 +23,24 @@ const getAll = async (req, res) => {
     }
 };
 
+const addItemToQuotationHandler = async (req, res) => {
+    try {
+        const { quotationId } = req.params;
+        const { productId, cantidad, precio } = req.body;
+
+        const result = await addItemToQuotation(
+            quotationId,
+            productId,
+            cantidad,
+            precio
+        );
+
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
 const getById = async (req, res) => {
     try {
         const quotation = await quotationModel.getQuotationById(req.params.id);
@@ -34,17 +53,6 @@ const getById = async (req, res) => {
         res.status(500).json({ message: 'Error fetching quotation' });
     }
 };
-
-// Controlador para descargar cotización como PDF
-/*const downloadQuotationPDF = async (req, res) => {
-    try {
-        console.log("📄 Datos recibidos para PDF:", req.body);
-        await generatePDF(req.body, res); // 👈 Ahora es async
-    } catch (error) {
-        console.error("Error generating PDF:", error);
-        res.status(500).json({ message: "Error generating PDF" });
-    }
-};*/
 
 const updateQuotation = async (req, res) => {
     try {
@@ -72,10 +80,38 @@ const deleteQuotation = async (req, res) => {
     }
 };
 
+// controlador para obtener cotización con productos
+const getQuotationWithItems = async (req, res) => {
+    try {
+        const { quotationId } = req.params;
+        const data = await quotationModel.getQuotationWithItems(quotationId);
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching quotation with items:', error);
+        res.status(500).json({ message: 'Error fetching quotation with items' });
+    }
+};
+
+const approveQuotationHandler = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await approveQuotation(id);
+        res.status(200).json({ message: 'Cotización aprobada', serviceOrderId: result.serviceOrderId });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+
+
+}
+
+
 module.exports = {
     newQuotation,
     getAll,
     getById,
     updateQuotation,
-    deleteQuotation
+    deleteQuotation,
+    getQuotationWithItems,
+    approveQuotationHandler,
+    addItemToQuotationHandler
 };
