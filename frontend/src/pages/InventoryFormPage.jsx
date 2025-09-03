@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
-import api from '../api'
+import api from "../api";
 
 const InventoryFormPage = () => {
   const navigate = useNavigate();
@@ -14,7 +14,8 @@ const InventoryFormPage = () => {
     nombre: "",
     descripcion: "",
     categoria_id: "", // ✅ Este es el que realmente enviamos al backend
-    proveedor_id: "",
+    proveedor_id: "", //
+    stock_actual: "",
     stock_minimo: "",
     precio_costo: "",
     ubicacion: "",
@@ -53,15 +54,13 @@ const InventoryFormPage = () => {
     const fetchProducto = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await api.get(
-          `products/${id}`,
-          config
-        );
+        const res = await api.get(`products/${id}`, config);
         setForm({
           nombre: res.data.nombre,
           descripcion: res.data.descripcion || "",
           categoria_id: res.data.categoria_id || "", // ✅ Se guarda como ID, no como texto
           proveedor_id: res.data.proveedor_id || "",
+          stock_actual: res.data.stock_actual || "",
           stock_minimo: res.data.stock_minimo || "",
           precio_costo: res.data.precio_costo || "",
           ubicacion: res.data.ubicacion || "",
@@ -93,11 +92,7 @@ const InventoryFormPage = () => {
 
     try {
       if (id) {
-        await api.put(
-          `/products/${id}`,
-          form,
-          config
-        );
+        await api.put(`/products/${id}`, form, config);
       } else {
         await api.post("/products", form, config);
       }
@@ -197,6 +192,20 @@ const InventoryFormPage = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* Stock actual*/}
+                <div>
+                  <label className="block mb-1">Stock actual</label>
+                  <input
+                    type="number"
+                    name="stock_actual"
+                    value={form.stock_actual}
+                    onChange={handleChange}
+                    required
+                    min={0}
+                    className="w-full border rounded px-3 py-2"
+                  />
                 </div>
 
                 {/* Stock mínimo */}

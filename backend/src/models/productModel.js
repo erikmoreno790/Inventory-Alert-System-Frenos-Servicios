@@ -1,156 +1,148 @@
 const pool = require('../config/db');
 
-const createProduct = async ({ nombre, descripcion, stock_actual, stock_minimo, categoria }) => {
-    const res = await pool.query(
-        `INSERT INTO products (nombre, descripcion, stock_actual, stock_minimo, categoria) 
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [nombre, descripcion, stock_actual, stock_minimo, categoria]
-    );
-    return res.rows[0];
-};
+const RepuestoModel = {
+    // Crear un nuevo repuesto
+    async createRepuesto(nombre, id_categoria, stock_actual, stock_minimo) {
+        const query = `
+      INSERT INTO repuestos (nombre, id_categoria, stock_actual, stock_minimo)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
+        const values = [nombre, id_categoria, stock_actual, stock_minimo];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
+    },
 
-// Crea un producto nuevo con solo el nombre
-const createProductWithName = async (nombre) => {
-    const res = await pool.query(
-        `INSERT INTO products (nombre) 
-     VALUES ($1) RETURNING *`,
-        [nombre]
-    );
-    return res.rows[0];
-};
+    // Obtener todos los repuestos
+    async getAllRepuestos() {
+        const query = `
+      SELECT r.id_product, r.nombre, r.stock_actual, r.stock_minimo, c.nombre AS categoria
+      FROM repuestos r
+      JOIN categorias c ON r.id_categoria = c.id_categoria
+      ORDER BY r.id_product ASC;
+    `;
+        const { rows } = await pool.query(query);
+        return rows;
+    },
 
-const getAllProducts = async () => {
-    const res = await pool.query('SELECT * FROM products ORDER BY id_product');
-    return res.rows;
-};
+    //Obtener todas las categorías
+    async getAllCategorias() {
+        const query = `SELECT * FROM categorias ORDER BY nombre ASC;`;
+        const { rows } = await pool.query(query);
+        return rows;
+    },
 
-const getProductById = async (id) => {
-    const res = await pool.query('SELECT * FROM products WHERE id_product = $1', [id]);
-    return res.rows[0];
-};
+    // Obtener todos los proveedores
+    async getProviders() {
+        const query = `SELECT * FROM proveedores ORDER BY nombre ASC;`;
+        const { rows } = await pool.query(query);
+        return rows;
+    },
 
-// Busca un producto por nombre
-const getProductByName = async (nombre) => {
-    const res = await pool.query('SELECT * FROM products WHERE nombre ILIKE $1 LIMIT 10', [`%${nombre}%`]);
-    return res.rows;
-};
+    // Obtener un repuesto por ID
+    async getRepuestoById(id_product) {
+        const query = `SELECT * FROM repuestos WHERE id_product = $1;`;
+        const values = [id_product];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
+    },
 
-const updateProduct = async (id, data) => {
-    const { nombre, descripcion, stock_actual, stock_minimo, categoria } = data;
-    const res = await pool.query(
-        `UPDATE products SET nombre = $1, description = $2, stock_actual = $3, 
-     stock_minimo = $4, categoria = $5 WHERE id_product = $6 RETURNING *`,
-        [nombre, descripcion, stock_actual, stoid_productck_minimo, categoria, id]
-    );
-    return res.rows[0];
-};
+    // Eliminar un repuesto
+    async deleteRepuesto(id_product) {
+        const query = `DELETE FROM repuestos WHERE id_product = $1 RETURNING *;`;
+        const values = [id_product];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
+    },
 
+    // 🔍 Buscar repuestos por nombre (útil para buscador)
+    async searchRepuestosByName(searchTerm) {
+        const query = `
+      SELECT r.*, c.nombre AS categoria
+      FROM repuestos r
+      JOIN categorias c ON r.id_categoria = c.id_categoria
+      WHERE LOWER(r.nombre) LIKE LOWER($1)
+      ORDER BY r.nombre ASC;
+    `;
+        const values = [`%${searchTerm}%`];
+        const { rows } = await pool.query(query, values);
+        return rows;
+    },
 
-const deleteProduct = async (id) => {
-    await pool.query('DELETE FROM products WHERE id_product = $1', [id]);
-};
+    // Buscar repuestos por categoría (útil para filtros)
+    async searchRepuestosByCategory(category) {
+        const query = `
+      SELECT r.*, c.nombre AS categoria
+        FROM repuestos r
+        JOIN categorias c ON r.id_categoria = c.id_categoria
+        WHERE LOWER(c.nombre) = LOWER($1)
+        ORDER BY r.nombre ASC;
+    `;
+        const values = [category];
+        const { rows } = await pool.query(query, values);
+        return rows;
+    },
 
-const getLowStockProducts = async () => {
-    const res = await pool.query(
-        `SELECT * FROM products WHERE stock_actual < stock_minimo ORDER BY stock_actual`
-    );
-    return res.rows;
-};
+    // 📦 Obtener repuestos con stock por debajo del mínimo
+    async getLowStockRepuestos() {
+        const query = `
+      SELECT r.*, c.nombre AS categoria
+      FROM repuestos r
+      JOIN categorias c ON r.id_categoria = c.id_categoria
+      WHERE r.stock_actual < r.stock_minimo
+      ORDER BY r.stock_actual ASC;
+    `;
+        const { rows } = await pool.query(query);
+        return rows;
+    },
 
-const getStock = async (productId) => {
-    const res = await pool.query(
-        `SELECT stock_actual FROM products WHERE id_product = $1`,
-        [productId]
-    );
-    return res.rows[0]?.stock_actual ?? null;
+    // 📊 Contar el total de repuestos registrados
+    async countRepuestos() {
+        const query = `SELECT COUNT(*) FROM repuestos;`;
+        const { rows } = await pool.query(query);
+        return parseInt(rows[0].count, 10);
+    },
+
+    // 🔗 Obtener todos los repuestos de una categoría específica
+    async getRepuestosByCategoria(id_categoria) {
+        const query = `
+      SELECT r.*, c.nombre AS categoria
+      FROM repuestos r
+      JOIN categorias c ON r.id_categoria = c.id_categoria
+      WHERE r.id_categoria = $1
+      ORDER BY r.nombre ASC;
+    `;
+        const values = [id_categoria];
+        const { rows } = await pool.query(query, values);
+        return rows;
+    },
+
+    // 🔢 Actualizar stock de un repuesto sumando o restando cantidad
+    async updateStock(id_product, cantidad) {
+        const query = `
+      UPDATE repuestos
+      SET stock_actual = stock_actual + $1
+      WHERE id_product = $2
+      RETURNING *;
+    `;
+        const values = [cantidad, id_product];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
+    },
+
+    // Actualizar un repuesto
+    async updateRepuesto(id_product, nombre, id_categoria, stock_actual, stock_minimo) {
+        const query = `
+      UPDATE repuestos
+      SET nombre = $1, id_categoria = $2, stock_actual = $3, stock_minimo = $4
+      WHERE id_product = $5
+      RETURNING *;
+    `;
+        const values = [nombre, id_categoria, stock_actual, stock_minimo, id_product];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
+    },
+
 }
 
-
-// Funcion para actualizar el stock de un producto cuando se registra un movimiento (entrada o salida)
-const updateStock = async (id, cantidad, tipo, fecha, id_usuario, observaciones) => {
-    // Verificar si el producto existe
-    const product = await getProductById(id);
-    if (!product) {
-        throw new Error(`Producto con ID ${id} no encontrado`);
-    }
-    // Verificar si la cantidad no agota el stock
-    if (product.stock_actual + cantidad < 0) {
-        throw new Error(`No hay suficiente stock para realizar esta operación`);
-    }
-
-    // Si tipo es 'entrada', la cantidad se debe sumar al stock actual y si es 'salida', se debe restar
-    if (tipo === 'entrada') {
-        cantidad = Math.abs(cantidad); // Asegurarse de que la cantidad sea positiva
-    }
-    if (tipo === 'salida') {
-        cantidad = -Math.abs(cantidad); // Asegurarse de que la cantidad sea negativa
-    }
-
-    // Registrar el movimiento en la tabla movimientos_stock
-    await pool.query(
-        `INSERT INTO movimientos_stock (id_product, cantidad, tipo, fecha, id_usuario, observaciones) VALUES ($1, $2, $3, $)`,
-        [id, cantidad, tipo, fecha, id_usuario, observaciones]
-    );
-    // Actualizar el stock del producto segundo el tipo de movimiento
-    const newStock = product.stock_actual + cantidad;
-    const res = await pool.query(
-        `UPDATE products SET stock_actual = $1 WHERE id_product = $2 RETURNING *`,
-        [newStock, id]
-    );
-
-    checkStockAlert(id); // Llamar a la función para verificar si se debe enviar una alerta
-
-    // Funcion que ejecuta una alerta si el stock del producto es menor al stock minimo
-    const checkStockAlert = async (id) => {
-        const product = await getProductById(id);
-        if (product.stock_actual < product.stock_minimo) {
-            console.log(`Alerta: El stock del producto ${product.nombre} es menor al mínimo permitido.`);
-            // Aquí podrías enviar una notificación o realizar alguna acción adicional
-        }
-    };
-
-    return res.rows[0];
-}
-
-
-const getMovementsByProductId = async (id) => {
-    const res = await pool.query(
-        `SELECT * FROM movimientos_stock WHERE id_product = $1 ORDER BY created_at DESC`,
-        [id]
-    );
-    return res.rows;
-};
-
-const getAllCategories = async () => {
-    const res = await pool.query(`
-    SELECT id_categoria, nombre
-    FROM categorias
-    ORDER BY nombre
-  `);
-    return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
-};
-
-const getAllProviders = async () => {
-    const res = await pool.query(`
-    SELECT id_categoria, nombre
-    FROM categorias
-    ORDER BY nombre
-  `);
-    return res.rows; // [{id_categoria: 1, nombre: 'Frenos'}, ...]
-};
-
-module.exports = {
-    createProduct,
-    getAllProducts,
-    getProductById,
-    updateProduct,
-    deleteProduct,
-    getLowStockProducts,
-    getStock,
-    updateStock,
-    getMovementsByProductId,
-    getAllCategories,
-    getAllProviders,
-    getProductByName,
-    createProductWithName
-};
+module.exports = RepuestoModel;

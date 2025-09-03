@@ -1,19 +1,17 @@
-//Tabla con filtros para ver todos los repuestos (nombre, stock, categoría, ubicación...).
-
-import { useState, useEffect } from 'react';
-import api from '../api';
-import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import TopNavbar from '../components/TopNavbar';
+import { useState, useEffect } from "react";
+import api from "../api";
+import { Link } from "react-router-dom";
+import { Search } from "lucide-react";
+import Sidebar from "../components/Sidebar";
+import TopNavbar from "../components/TopNavbar";
 
 const InventoryListPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inventario, setInventario] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -22,14 +20,18 @@ const InventoryListPage = () => {
   useEffect(() => {
     const fetchInventario = async () => {
       try {
-        const response = await api.get('/products', {
+        const response = await api.get("/products", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+        console.log(response.data);
         setInventario(response.data); // Ajusta si tu backend devuelve { data: [] } u otro formato
       } catch (error) {
-        console.error('Error al obtener los productos:', error.response?.data || error.message);
+        console.error(
+          "Error al obtener los productos:",
+          error.response?.data || error.message
+        );
       } finally {
         setLoading(false);
       }
@@ -39,9 +41,10 @@ const InventoryListPage = () => {
   }, [token]);
 
   const handleFiltrado = () => {
-    return inventario.filter(item =>
-      item.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      item.categoria.toLowerCase().includes(busqueda.toLowerCase())
+    return inventario.filter(
+      (item) =>
+        item.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        item.categoria.toLowerCase().includes(busqueda.toLowerCase())
     );
   };
 
@@ -85,8 +88,8 @@ const InventoryListPage = () => {
                     <tr>
                       <th className="text-left px-4 py-2">Nombre</th>
                       <th className="text-left px-4 py-2">Categoría</th>
-                      <th className="text-center px-4 py-2">Stock</th>
-                      <th className="text-center px-4 py-2">Mínimo</th>
+                      <th className="text-center px-4 py-2">Cantidad Actual</th>
+                      <th className="text-center px-4 py-2">Cantidad Mínima</th>
                       <th className="text-center px-4 py-2">Acciones</th>
                     </tr>
                   </thead>
@@ -102,7 +105,7 @@ const InventoryListPage = () => {
                               : ""
                           }`}
                         >
-                          {item.stock}
+                          {item.stock_actual}
                         </td>
                         <td className="px-4 py-2 text-center">
                           {item.stock_minimo}
@@ -146,4 +149,3 @@ const InventoryListPage = () => {
 };
 
 export default InventoryListPage;
-

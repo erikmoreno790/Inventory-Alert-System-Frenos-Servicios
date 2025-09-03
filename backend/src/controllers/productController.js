@@ -1,102 +1,154 @@
 const productModel = require('../models/productModel');
 const { sendLowStockAlert } = require('../utils/emailService');
 
-const create = async (req, res) => {
-    const product = await productModel.createProduct(req.body);
-    res.status(201).json(product);
-};
-
-// crea un producto con solo el nombre
-const createSimpleProduct = async (req, res) => {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ message: 'Nombre del producto es requerido' });
-    const product = await productModel.createProductWithName(name);
-    res.status(201).json(product);
-};
-
-const getAll = async (req, res) => {
-    const products = await productModel.getAllProducts();
-    res.json(products);
-};
-
-const getById = async (req, res) => {
-    const product = await productModel.getProductById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Producto no encontrado' });
-    res.json(product);
-};
-
-// Busca el producto por nombre 
-const getByName = async (req, res) => {
-    const { name } = req.query;
-    if (!name) return res.status(400).json({ message: 'Nombre del producto es requerido' });
-    const product = await productModel.getProductByName(name);
-    if (!product) return res.status(404).json({ message: 'Producto no encontrado' });
-    res.json(product);
-};
-
-const update = async (req, res) => {
-    const updated = await productModel.updateProduct(req.params.id, req.body);
-    res.json(updated);
-};
-
-const remove = async (req, res) => {
-    await productModel.deleteProduct(req.params.id);
-    res.json({ message: 'Producto eliminado' });
-};
-
-const getLowStock = async (req, res) => {
-    const products = await productModel.getLowStockProducts();
-    res.json(products);
-};
-
-const getCategories = async (req, res) => {
-    const categories = await productModel.getAllCategories();
-    res.json(categories);
-};
-
-const getProviders = async (req, res) => {
-    const providers = await productModel.getAllProviders();
-    res.json(providers);
-};
-
-const updateProductStock = async (req, res) => {
-    const { cantidad, operacion } = req.body; // operacion: 'sumar' o 'restar'
-    const { id } = req.params;
-
-    if (!['sumar', 'restar'].includes(operacion)) {
-        return res.status(400).json({ message: 'Operación inválida. Usa "sumar" o "restar"' });
-    }
-
+// Crear un nuevo repuesto
+exports.createRepuesto = async (req, res) => {
     try {
-        const updated = await updateStock(id, cantidad, operacion);
-
-        if (!updated) return res.status(404).json({ message: 'Producto no encontrado' });
-
-        let alerta = null;
-        if (updated.stock_actual < updated.stock_minimo) {
-
-            await createNotification({
-                user_id: null, // o puedes poner el ID del responsable de inventario
-                message: `⚠️ Stock bajo: ${updated.name} (${updated.stock_actual}/${updated.stock_minimo})`
-            });
-
-            await sendLowStockAlert(updated, ['inventario@empresa.com', 'compras@empresa.com']);
-        }
-
-        res.json({ message: 'Stock actualizado', producto: updated, alerta });
-    } catch (err) {
-        res.status(500).json({ message: 'Error actualizando stock', error: err.message });
+        const repuesto = await productModel.createRepuesto(req.body);
+        res.status(201).json(repuesto);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };
 
-const getMovements = async (req, res) => {
-    const { id } = req.params;
-    const movements = await productModel.getMovementsByProductId(id);
-    if (!movements) return res.status(404).json({ message: 'Movimientos no encontrados para este producto' });
-    res.json(movements);
+// Obtener todos los repuestos
+exports.getAllRepuestos = async (req, res) => {
+    try {
+        const repuestos = await productModel.getAllRepuestos();
+        res.json(repuestos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtener un repuesto por ID
+exports.getRepuestoById = async (req, res) => {
+    try {
+        const repuesto = await productModel.getRepuestoById(req.params.id);
+        if (!repuesto) {
+            return res.status(404).json({ error: 'Repuesto no encontrado' });
+        }
+        res.json(repuesto);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Eliminar un repuesto
+exports.deleteRepuesto = async (req, res) => {
+    try {
+        const result = await productModel.deleteRepuesto(req.params.id);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Repuesto no encontrado' });
+        }
+        res.json({ message: 'Repuesto eliminado correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Buscar repuestos por nombre
+exports.searchRepuestosByName = async (req, res) => {
+    try {
+        const repuestos = await productModel.searchRepuestosByName(req.query.name);
+        res.json(repuestos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Buscar repuestos por categoría
+exports.searchRepuestosByCategory = async (req, res) => {
+    try {
+        const repuestos = await productModel.searchRepuestosByCategory(req.query.category);
+        res.json(repuestos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtener repuestos con bajo stock
+exports.getLowStockRepuestos = async (req, res) => {
+    try {
+        const repuestos = await productModel.getLowStockRepuestos();
+        res.json(repuestos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Actualizar un repuesto
+exports.updateRepuesto = async (req, res) => {
+    try {
+        const result = await productModel.updateRepuesto(req.params.id, req.body);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Repuesto no encontrado' });
+        }
+        res.json({ message: 'Repuesto actualizado correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtener repuestos por categoría
+exports.getRepuestosByCategory = async (req, res) => {
+    try {
+        const repuestos = await productModel.getRepuestosByCategory(req.params.category);
+        res.json(repuestos);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtener todas las categorías
+exports.getAllCategorias = async (req, res) => {
+    try {
+        const categorias = await productModel.getAllCategorias();
+        res.json(categorias);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obtener todos los proveedores
+exports.getProviders = async (req, res) => {
+    try {
+        const providers = await productModel.getProviders();
+        res.json(providers);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
 
 
-module.exports = {
-    create, createSimpleProduct, getAll, getById, update, remove, getLowStock, getByName, updateProductStock, getMovements, getCategories, getProviders
+// Contar repuestos
+exports.countRepuestos = async (req, res) => {
+    try {
+        const count = await productModel.countRepuestos();
+        res.json({ count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
+
+// Actualizar stock de un repuesto
+exports.updateStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { stock } = req.body;
+        const result = await productModel.updateStock(id, stock);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Repuesto no encontrado' });
+        }
+        // Opcional: enviar alerta si el stock es bajo
+        if (stock < 5) {
+            const repuesto = await productModel.getRepuestoById(id);
+            await sendLowStockAlert(repuesto);
+        }
+        res.json({ message: 'Stock actualizado correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
