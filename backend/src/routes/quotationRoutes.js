@@ -8,13 +8,15 @@ router.use(authenticate);
 
 // Acceso según roles (tú puedes ajustarlo)
 router.post("/", authorize("admin", "user"), quotationController.newQuotation);
-router.post('/:id/approve', quotationController.approveQuotationHandler);
-router.post('/:quotationId/items', quotationController.addItemToQuotationHandler);
+router.post('/:id/approve', quotationController.changeStatus);
+router.post('/:quotationId/items', quotationController.checkStock);
 router.get("/", authorize("admin", "user"), quotationController.getAll);
 router.get("/:id", authorize("admin", "user"), quotationController.getById);
 router.put("/:id", authorize("admin", "user"), quotationController.updateQuotation);
 router.delete("/:id", authorize("admin"), quotationController.deleteQuotation);
-router.get("/with-items/:id", authorize("admin", "user"), quotationController.getQuotationWithItems);
+router.get("/search/:placa", authorize("admin", "user"), quotationController.searchByPlaca);
+router.post("/update-stock", authorize("admin"), quotationController.updateStock);
+
 
 // Exportar el router
 module.exports = router;

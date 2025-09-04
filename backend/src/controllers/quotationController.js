@@ -1,6 +1,4 @@
 const quotationModel = require('../models/quotationModel');
-const { approveQuotation } = require('../services/quotationService');
-const { addItemToQuotation } = require('../services/quotationService');
 
 
 const newQuotation = async (req, res) => {
@@ -15,7 +13,7 @@ const newQuotation = async (req, res) => {
 
 const getAll = async (req, res) => {
     try {
-        const quotations = await quotationModel.getQuotations();
+        const quotations = await quotationModel.getAllQuotations();
         res.json(quotations);
     } catch (error) {
         console.error('Error fetching quotations:', error);
@@ -23,23 +21,6 @@ const getAll = async (req, res) => {
     }
 };
 
-const addItemToQuotationHandler = async (req, res) => {
-    try {
-        const { quotationId } = req.params;
-        const { productId, cantidad, precio } = req.body;
-
-        const result = await addItemToQuotation(
-            quotationId,
-            productId,
-            cantidad,
-            precio
-        );
-
-        res.status(200).json(result);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-}
 
 const getById = async (req, res) => {
     try {
@@ -80,29 +61,61 @@ const deleteQuotation = async (req, res) => {
     }
 };
 
-// controlador para obtener cotización con productos
-const getQuotationWithItems = async (req, res) => {
+
+// Controlador para buscar cotizaciones por placa
+const searchByPlaca = async (req, res) => {
     try {
-        const { quotationId } = req.params;
-        const data = await quotationModel.getQuotationWithItems(quotationId);
-        res.json(data);
+        const { placa } = req.query;
+        const quotations = await quotationModel.findQuotationsByPlaca(placa);
+        res.json(quotations);
     } catch (error) {
-        console.error('Error fetching quotation with items:', error);
-        res.status(500).json({ message: 'Error fetching quotation with items' });
+        console.error('Error searching quotations by placa:', error);
+        res.status(500).json({ message: 'Error searching quotations by placa' });
     }
 };
 
-const approveQuotationHandler = async (req, res) => {
+// Controlador para cambiar el estado de una cotización
+const changeStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await approveQuotation(id);
-        res.status(200).json({ message: 'Cotización aprobada', serviceOrderId: result.serviceOrderId });
+        const { status } = req.body;
+        const updatedQuotation = await quotationModel.updateQuotationStatus(id, status);
+        if (!updatedQuotation) {
+            return res.status(404).json({ message: 'Quotation not found' });
+        }
+        res.json(updatedQuotation);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error updating quotation status:', error);
+        res.status(500).json({ message: 'Error updating quotation status' });
     }
+};
+
+// Controlador para verificar disponibilidad de stock
+const checkStock = async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{id_product, quantity}]
+        const insufficientStock = await quotationModel.checkStockAvailability(items);
+        res.json({ insufficientStock });
+    } catch (error) {
+        console.error('Error checking stock availability:', error);
+        res.status(500).json({ message: 'Error checking stock availability' });
+    }
+};
+
+// Controlador para actualizar stock al aprobar una cotización
+const updateStock = async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{id_product, quantity}]
+        await quotationModel.updateStockOnApproval(items);
+        res.json({ message: 'Stock updated successfully' });
+    } catch (error) {
+        console.error('Error updating stock:', error);
+        res.status(500).json({ message: 'Error updating stock' });
+    }
+};
 
 
-}
+
 
 
 module.exports = {
@@ -111,7 +124,8 @@ module.exports = {
     getById,
     updateQuotation,
     deleteQuotation,
-    getQuotationWithItems,
-    approveQuotationHandler,
-    addItemToQuotationHandler
+    searchByPlaca,
+    changeStatus,
+    checkStock,
+    updateStock
 };

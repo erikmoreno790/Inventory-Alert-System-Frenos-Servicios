@@ -13,11 +13,8 @@ import QuotationPDFView from "./pages/QuotationPDFView";
 import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
 import QuotationDetailPage from "./pages/QuotationDetailPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
-import ServiceOrderFormPage from "./pages/ServiceOrderFormPage";
-import ServiceOdersListPage from "./pages/ServiceOrdersHistoryPage";
-import ServiceOrderDetailPage from "./pages/ServiceOrderDetailPage";
-import EditServiceOrderPage from "./pages/EditServiceOrderPage";
-import UserPartsPage from "./pages/UserPartsPage";
+import QuotationTempPage from "./pages/QuotationTempPage";
+import QuotationDetailTempPage from "./pages/QuotationDetailTempPage";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -104,6 +101,14 @@ function App() {
           }
         />
         <Route
+          path="/cotizaciones/editar/:id"
+          element={
+            <PrivateRoute>
+              <QuotationPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/cotizacion/:id"
           element={
             <PrivateRoute>
@@ -112,7 +117,7 @@ function App() {
           }
         />
         <Route
-          path="/cotizacion/pdf"
+          path="/cotizacion/pdf/:id"
           element={
             <PrivateRoute>
               <QuotationPDFView />
@@ -127,44 +132,19 @@ function App() {
             </PrivateRoute>
           }
         />
-
         <Route
-          path="/ordenes-servicio"
+          path="/cotizacion-temporal"
           element={
             <PrivateRoute>
-              <ServiceOdersListPage />
+              <QuotationTempPage />
             </PrivateRoute>
           }
         />
         <Route
-          path="/ordenes-servicio/nueva"
+          path="/cotizacion-temporal/:id"
           element={
             <PrivateRoute>
-              <ServiceOrderFormPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/ordenes-servicio/:id"
-          element={
-            <PrivateRoute>
-              <ServiceOrderDetailPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/ordenes-servicio/edit/:id"
-          element={
-            <PrivateRoute>
-              <EditServiceOrderPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/use-parts/:id"
-          element={
-            <PrivateRoute>
-              <UserPartsPage />
+              <QuotationDetailPage />
             </PrivateRoute>
           }
         />

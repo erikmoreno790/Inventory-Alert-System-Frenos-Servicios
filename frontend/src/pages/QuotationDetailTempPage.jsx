@@ -6,26 +6,33 @@ import TopNavbar from "../components/TopNavbar";
 import api from "../api";
 
 const QuotationDetailPage = () => {
-  const { id } = useParams(); // ID de la cotización desde la URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [quotation, setQuotation] = useState(null); // Estado para la cotización
+  const [quotation, setQuotation] = useState(null);
+  const [items, setItems] = useState([]); // 🔹 Items de la cotización
   const [loading, setLoading] = useState(true);
 
-  // Función para abrir/cerrar Sidebar
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // Cargar detalles de la cotización
+  // Cargar cotización y sus ítems
   useEffect(() => {
     const fetchQuotationDetail = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await api.get(`/quotations/${id}`, config);
-        setQuotation(res.data);
+
+        // 🔹 Obtener cotización
+        const quotationRes = await api.get(`/quotations/${id}`, config);
+        setQuotation(quotationRes.data);
+
+        // 🔹 Obtener items desde quotation_items_snapshot
+        const itemsRes = await api.get(
+          `/quotation-temp/quotation/${id}`,
+          config
+        );
+        setItems(itemsRes.data || []);
       } catch (error) {
         console.error(
           "Error cargando la cotización:",
@@ -39,7 +46,6 @@ const QuotationDetailPage = () => {
     fetchQuotationDetail();
   }, [id, token]);
 
-  // Función para aprobar cotización
   const handleApprove = async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -51,7 +57,6 @@ const QuotationDetailPage = () => {
     }
   };
 
-  // Función para eliminar cotización
   const handleDelete = async () => {
     if (!window.confirm("¿Seguro que deseas eliminar esta cotización?")) return;
 
@@ -65,26 +70,21 @@ const QuotationDetailPage = () => {
     }
   };
 
-  // Función para imprimir (redirigir a QuotationPDFView con datos)
   const handlePrint = () => {
-    // Guardamos en localStorage por si el usuario recarga la página de impresión
-    localStorage.setItem("currentQuotation", JSON.stringify(quotation));
-
-    // Navegamos a la vista de impresión con la cotización en state
-    navigate(`/cotizacion/pdf/${id}`, { state: quotation });
+    localStorage.setItem(
+      "currentQuotation",
+      JSON.stringify({ ...quotation, items })
+    );
+    navigate(`/cotizacion/pdf/${id}`, { state: { ...quotation, items } });
   };
 
-  if (loading) {
+  if (loading)
     return <div className="p-6 text-gray-600">Cargando cotización...</div>;
-  }
-
-  if (!quotation) {
+  if (!quotation)
     return <div className="p-6 text-red-500">Cotización no encontrada.</div>;
-  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
@@ -92,12 +92,10 @@ const QuotationDetailPage = () => {
           sidebarOpen ? "ml-64" : ""
         } transition-all duration-300`}
       >
-        {/* Navbar */}
         <TopNavbar onToggleSidebar={toggleSidebar} />
 
         <main>
           <div className="p-6">
-            {/* Botón volver */}
             <Link
               to="/cotizaciones"
               className="text-blue-600 hover:underline flex items-center mb-4"
@@ -105,7 +103,6 @@ const QuotationDetailPage = () => {
               <ArrowLeft className="mr-2" size={16} /> Volver a Cotizaciones
             </Link>
 
-            {/* Encabezado */}
             <h1 className="text-2xl font-bold mb-2">
               Cotización #{quotation.id_quotation}
             </h1>
@@ -171,16 +168,22 @@ const QuotationDetailPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {quotation.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{item.nombre}</td>
-                      <td className="border p-2">{item.quantity}</td>
-                      <td className="border p-2">${item.price}</td>
-                      <td className="border p-2">
-                        ${item.price * item.quantity}
+                  {items.length > 0 ? (
+                    items.map((item) => (
+                      <tr key={item.id_quotation_item}>
+                        <td className="border p-2">{item.producto}</td>
+                        <td className="border p-2">{item.cantidad}</td>
+                        <td className="border p-2">${item.precio}</td>
+                        <td className="border p-2">${item.subtotal}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center p-4 text-gray-500">
+                        No hay productos cotizados
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -198,7 +201,7 @@ const QuotationDetailPage = () => {
               </p>
             </div>
 
-            {/* Botones de acción */}
+            {/* Botones */}
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={handleApprove}
