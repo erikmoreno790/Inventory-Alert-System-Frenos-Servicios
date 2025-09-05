@@ -1,84 +1,68 @@
-const quotationTempModel = require('../models/quotationTempModel');
+const QuotationTempModel = require('../models/quotationTempModel');
 
-const QuotationTempController = {
-    // Crear un nuevo ítem en la cotización temporal
-    async createItem(req, res) {
+const quotationTempController = {
+    async createQuotationTemp(req, res) {
         try {
-            const { id_quotation, producto, cantidad, precio, subtotal } = req.body;
-            const newItem = await quotationTempModel.createItem({
-                id_quotation,
-                producto,
-                cantidad,
-                precio,
-                subtotal
-            });
-            res.status(201).json(newItem);
-        } catch (error) {
-            console.error('Error creando ítem:', error);
-            res.status(500).json({ message: 'Error creando ítem' });
+            const quotation = await QuotationTempModel.create(req.body);
+            res.json(quotation);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
         }
     },
 
-    // Obtener todos los ítems de una cotización temporal
+    async getAllQuotationsTemp(req, res) {
+        try {
+            const quotations = await QuotationTempModel.findAll();
+            res.json(quotations);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    },
+
+    async getQuotationTempById(req, res) {
+        try {
+            const quotation = await QuotationTempModel.findById(req.params.id_quotation);
+            res.json(quotation);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    },
+
+    async addItem(req, res) {
+        try {
+            const item = await QuotationTempModel.addItem(req.params.id_quotation, req.body);
+            res.json(item);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    },
+
     async getItemsByQuotation(req, res) {
         try {
-            const { id_quotation } = req.params;
-            const items = await quotationTempModel.getItemsByQuotation(id_quotation);
-            res.status(200).json(items);
-        } catch (error) {
-            console.error('Error obteniendo ítems:', error);
-            res.status(500).json({ message: 'Error obteniendo ítems' });
+            const items = await QuotationTempModel.getItems(req.params.id_quotation);
+            res.json(items);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
         }
     },
 
-    // Obtener un ítem específico por ID
-    async getItemById(req, res) {
-        try {
-            const { id_quotation_item } = req.params;
-            const item = await quotationTempModel.getItemById(id_quotation_item);
-            if (!item) {
-                return res.status(404).json({ message: 'Ítem no encontrado' });
-            }
-            res.status(200).json(item);
-        } catch (error) {
-            console.error('Error obteniendo ítem:', error);
-            res.status(500).json({ message: 'Error obteniendo ítem' });
-        }
-    },
-    // Actualizar un ítem
     async updateItem(req, res) {
         try {
-            const { id_quotation_item } = req.params;
-            const { producto, cantidad, precio, subtotal } = req.body;
-            const updatedItem = await quotationTempModel.updateItem(id_quotation_item, {
-                producto,
-                cantidad,
-                precio,
-                subtotal
-            });
-            if (!updatedItem) {
-                return res.status(404).json({ message: 'Ítem no encontrado' });
-            }
-            res.status(200).json(updatedItem);
-        } catch (error) {
-            console.error('Error actualizando ítem:', error);
-            res.status(500).json({ message: 'Error actualizando ítem' });
+            const updated = await QuotationTempModel.updateItem(req.params.id_item, req.body);
+            res.json(updated);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
         }
     },
-    // Eliminar un ítem por ID
-    async deleteItem(req, res) {
+
+    async removeItem(req, res) {
         try {
-            const { id_quotation_item } = req.params;
-            const deletedItem = await quotationTempModel.deleteItem(id_quotation_item);
-            if (!deletedItem) {
-                return res.status(404).json({ message: 'Ítem no encontrado' });
-            }
-            res.status(200).json({ message: 'Ítem eliminado' });
-        } catch (error) {
-            console.error('Error eliminando ítem:', error);
-            res.status(500).json({ message: 'Error eliminando ítem' });
+            const result = await QuotationTempModel.removeItem(req.params.id_item);
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
         }
     },
 };
 
-module.exports = QuotationTempController;
+module.exports = quotationTempController;

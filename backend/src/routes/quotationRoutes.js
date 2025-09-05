@@ -7,7 +7,7 @@ const { authenticate, authorize } = require("../middleware/authMiddleware");
 router.use(authenticate);
 
 // Acceso según roles (tú puedes ajustarlo)
-router.post("/", authorize("admin", "user"), quotationController.newQuotation);
+router.post("/", authorize("admin", "user"), quotationController.createQuotation);
 router.post('/:id/approve', quotationController.changeStatus);
 router.post('/:quotationId/items', quotationController.checkStock);
 router.get("/", authorize("admin", "user"), quotationController.getAll);

@@ -28,7 +28,7 @@ const Sidebar = () => {
   const links = [
     { to: "/dashboard", label: "Dashboard", icon: <Home size={18} /> },
     {
-      to: "/cotizacion",
+      to: "/cotizacion-temporal",
       label: "Nueva Cotización",
       icon: <Wrench size={18} />,
     },

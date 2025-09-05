@@ -1,15 +1,15 @@
 const quotationModel = require('../models/quotationModel');
 
 
-const newQuotation = async (req, res) => {
+const createQuotation = async (req, res) => {
     try {
-        const quotationId = await quotationModel.createQuotation(req.body);
-        res.status(201).json({ id: quotationId });
-    } catch (error) {
-        console.error('Error creating quotation:', error);
-        res.status(500).json({ message: 'Error creating quotation' });
+        const quotation = await quotationModel.createQuotation(req.body);
+        res.status(201).json(quotation); // { id_quotation: ... }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error al crear cotización" });
     }
-}
+};
 
 const getAll = async (req, res) => {
     try {
@@ -119,7 +119,7 @@ const updateStock = async (req, res) => {
 
 
 module.exports = {
-    newQuotation,
+    createQuotation,
     getAll,
     getById,
     updateQuotation,

@@ -10,69 +10,40 @@ const QuotationModel = {
     /**
      * Crear nueva cotización
      */
-    async createQuotation(data) {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            const {
-                cliente,
-                nit,
-                telefono,
-                email,
-                placa,
-                vehiculo,
-                modelo,
-                fecha_cotizacion,
-                estado = 'pending',
-                total,
-                kilometraje,
-                subtotal,
-                discount,
-                items = []
-            } = data;
-
-            // Insertar cotización
-            const insertQuotationQuery = `
-        INSERT INTO quotations (
-          cliente, nit, telefono, email, placa,
-          vehiculo, modelo, fecha_cotizacion, estado,
-          total, kilometraje, subtotal, discount
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-        RETURNING id_quotation;
-      `;
-
-            const quotationResult = await client.query(insertQuotationQuery, [
-                cliente, nit, telefono, email, placa,
-                vehiculo, modelo, fecha_cotizacion, estado,
-                total, kilometraje, subtotal, discount
-            ]);
-
-            const quotationId = quotationResult.rows[0].id_quotation;
-
-            // Insertar items relacionados
-            const insertItemQuery = `
-        INSERT INTO quotation_items (id_quotation, id_product, quantity, price)
-        VALUES ($1, $2, $3, $4);
-      `;
-
-            for (const item of items) {
-                const { id_product, quantity, price } = item;
-                await client.query(insertItemQuery, [quotationId, id_product, quantity, price]);
-            }
-
-            await client.query('COMMIT');
-            return { success: true, message: 'Cotización creada exitosamente', id: quotationId };
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Error al crear cotización:', error);
-            throw error;
-        } finally {
-            client.release();
-        }
+    async createQuotation({
+        cliente,
+        nit,
+        telefono,
+        email,
+        placa,
+        vehiculo,
+        modelo,
+        kilometraje,
+        fecha_cotizacion,
+        discount,
+    }) {
+        const query = `
+      INSERT INTO quotations (
+        cliente, nit, telefono, email, placa, vehiculo, modelo, kilometraje,
+        fecha_cotizacion, discount
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)
+      RETURNING id_quotation;
+    `;
+        const values = [
+            cliente,
+            nit,
+            telefono,
+            email,
+            placa,
+            vehiculo,
+            modelo,
+            kilometraje,
+            discount,
+        ];
+        const { rows } = await pool.query(query, values);
+        return rows[0];
     },
-
     /**
      * Obtener todas las quotations
      */

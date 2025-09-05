@@ -2,15 +2,14 @@ const pool = require('../config/db');
 
 const RepuestoModel = {
     // Crear un nuevo repuesto
-    async createRepuesto(nombre, id_categoria, stock_actual, stock_minimo) {
-        const query = `
-      INSERT INTO repuestos (nombre, id_categoria, stock_actual, stock_minimo)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *;
-    `;
-        const values = [nombre, id_categoria, stock_actual, stock_minimo];
-        const { rows } = await pool.query(query, values);
-        return rows[0];
+    async createRepuesto(data) {
+        const { nombre, descripcion, id_categoria, id_proveedor, stock_actual, stock_minimo, precio_costo, ubicacion, codigo_interno } = data;
+        const result = await pool.query(
+            `INSERT INTO repuestos (nombre, descripcion, id_categoria, id_proveedor, stock_actual, stock_minimo, precio_costo, ubicacion, codigo_interno)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+            [nombre, descripcion, id_categoria, id_proveedor, stock_actual, stock_minimo, precio_costo, ubicacion, codigo_interno]
+        );
+        return result.rows[0];
     },
 
     // Obtener todos los repuestos

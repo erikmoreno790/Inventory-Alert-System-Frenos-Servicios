@@ -22,37 +22,44 @@ const QuotationsTempPage = () => {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // 🔹 Cargar cotización temporal si existe
+  // 🔹 Cargar cotización temporal y sus items
   useEffect(() => {
-    const fetchQuotation = async () => {
+    const fetchQuotationTemp = async () => {
       if (!id) return;
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const { data } = await api.get(`/quotations-temp/${id}`, config);
 
-        // Campos de cliente
+        // Obtener datos de cotización
+        const { data: quotation } = await api.get(
+          `/quotations-temp/${id}`,
+          config
+        );
         dispatch(
           updateFormData({
-            cliente: data.cliente,
-            nit: data.nit,
-            telefono: data.telefono,
-            email: data.email,
-            placa: data.placa,
-            vehiculo: data.vehiculo,
-            modelo: data.modelo,
-            kilometraje: data.kilometraje,
-            fechaVencimiento: data.fecha_cotizacion?.split("T")[0] || "",
-            discountPercent: data.discount_percent || 0,
+            cliente: quotation.cliente,
+            nit: quotation.nit,
+            telefono: quotation.telefono,
+            email: quotation.email,
+            placa: quotation.placa,
+            vehiculo: quotation.vehiculo,
+            modelo: quotation.modelo,
+            kilometraje: quotation.kilometraje,
+            fecha_cotizacion: quotation.fecha_cotizacion?.split("T")[0] || "",
+            discount: quotation.discount || 0,
           })
         );
 
-        // Items
-        if (data.items && data.items.length > 0) {
-          data.items.forEach((item) => {
+        // Obtener items
+        const { data: items } = await api.get(
+          `/quotations-temp/${id}/items`,
+          config
+        );
+        if (items.length > 0) {
+          items.forEach((item) => {
             dispatch(
               addItem({
-                descripcion: item.producto,
+                descripcion: item.descripcion,
                 cantidad: item.cantidad,
                 precio: item.precio,
                 origen: "manual",
@@ -68,14 +75,14 @@ const QuotationsTempPage = () => {
 
     if (id) {
       dispatch(resetForm());
-      fetchQuotation();
+      fetchQuotationTemp();
     }
   }, [id, dispatch]);
 
-  // 🔹 Recalcular totales
+  // 🔹 Recalcular totales cuando cambian items o descuento
   useEffect(() => {
     dispatch(updateCalculations());
-  }, [formData.items, formData.discountPercent, dispatch]);
+  }, [formData.items, formData.discount, dispatch]);
 
   // 🔹 Guardar o actualizar cotización temporal
   const handleSubmit = async () => {
@@ -84,7 +91,7 @@ const QuotationsTempPage = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       if (id) {
-        // Actualizar
+        console.log(`🔹 PUT => /quotations-temp/${id}`);
         await api.put(
           `/quotations-temp/${id}`,
           {
@@ -96,15 +103,31 @@ const QuotationsTempPage = () => {
             vehiculo: formData.vehiculo,
             modelo: formData.modelo,
             kilometraje: formData.kilometraje,
-            fechaVencimiento: formData.fechaVencimiento,
-            discountPercent: formData.discountPercent,
-            items: formData.items,
+            fecha_cotizacion: formData.fecha_cotizacion,
+            discount: formData.discount,
           },
           config
         );
+
+        console.log(`🔹 DELETE => /quotations-temp/${id}/items`);
+        await api.delete(`/quotations-temp/${id}/items`, config);
+
+        for (const item of formData.items) {
+          console.log(`🔹 POST => /quotations-temp/${id}/items`, item);
+          await api.post(
+            `/quotations-temp/${id}/items`,
+            {
+              descripcion: item.descripcion,
+              cantidad: item.cantidad,
+              precio: item.precio,
+            },
+            config
+          );
+        }
+
         alert("Cotización temporal actualizada");
       } else {
-        // Crear nueva
+        console.log(`🔹 POST => /quotations-temp`);
         const { data: quotation } = await api.post(
           "/quotations-temp",
           {
@@ -116,17 +139,21 @@ const QuotationsTempPage = () => {
             vehiculo: formData.vehiculo,
             modelo: formData.modelo,
             kilometraje: formData.kilometraje,
-            fechaVencimiento: formData.fechaVencimiento,
-            discountPercent: formData.discountPercent,
+            fecha_cotizacion: formData.fecha_cotizacion,
+            discount: formData.discount,
           },
           config
         );
 
         for (const item of formData.items) {
+          console.log(
+            `🔹 POST => /quotations-temp/${quotation.id_quotation}/items`,
+            item
+          );
           await api.post(
-            `/quotations-temp/${quotation.id}/items`,
+            `/quotations-temp/${quotation.id_quotation}/items`,
             {
-              descripcion: item.descripcion,
+              producto: item.producto, // ✅ CAMBIADO
               cantidad: item.cantidad,
               precio: item.precio,
             },
@@ -140,15 +167,17 @@ const QuotationsTempPage = () => {
       dispatch(resetForm());
       navigate("/historial-cotizaciones-temp");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error al guardar cotización:", err);
       alert(err.response?.data?.message || "Error al guardar la cotización");
     }
   };
 
+  // 🔹 Manejo de campos cliente
   const handleChange = (e) => {
     dispatch(updateFormData({ [e.target.name]: e.target.value }));
   };
 
+  // 🔹 Agregar ítem manual
   const addManualItem = () => {
     dispatch(
       addItem({
@@ -160,6 +189,7 @@ const QuotationsTempPage = () => {
     );
   };
 
+  // 🔹 Manejo de cambios en ítems
   const handleItemChange = (index, field, value) => {
     dispatch(
       updateItem({
@@ -171,16 +201,18 @@ const QuotationsTempPage = () => {
     );
   };
 
+  // 🔹 Eliminar ítem
   const removeItemHandler = (index) => {
     dispatch(removeItem(index));
   };
 
+  // 🔹 Aplicar descuento
   const applyDiscount = () => {
     const input = prompt("Ingrese el descuento en porcentaje (0-100):");
     if (!input) return;
     const percent = parseFloat(input.trim());
     if (!isNaN(percent) && percent >= 0 && percent <= 100) {
-      dispatch(updateFormData({ discountPercent: percent }));
+      dispatch(updateFormData({ discount: percent }));
     } else {
       alert("Por favor ingrese un número válido");
     }
@@ -238,8 +270,8 @@ const QuotationsTempPage = () => {
               ))}
               <input
                 type="date"
-                name="fechaVencimiento"
-                value={formData.fechaVencimiento}
+                name="fecha_cotizacion"
+                value={formData.fecha_cotizacion}
                 onChange={handleChange}
                 className="border p-2"
               />
