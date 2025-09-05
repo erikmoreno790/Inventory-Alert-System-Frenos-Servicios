@@ -1,228 +1,164 @@
+// QuotationDetailPage.jsx
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer, Edit, Trash2, CheckCircle } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../api";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
-import api from "../api";
 
 const QuotationDetailPage = () => {
-  const { id } = useParams(); // ID de la cotización desde la URL
+  const { id } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [quotation, setQuotation] = useState(null); // Estado para la cotización
-  const [loading, setLoading] = useState(true);
+  const [quotation, setQuotation] = useState(null);
+  const [status, setStatus] = useState("");
 
-  // Función para abrir/cerrar Sidebar
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  // 🔹 Cargar cotización
+  const fetchQuotation = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const { data } = await api.get(`/quotations/${id}`, config);
+      setQuotation(data);
+      setStatus(data.estatus);
+    } catch (err) {
+      console.error(err);
+      alert("Error cargando cotización");
+    }
   };
 
-  // Cargar detalles de la cotización
   useEffect(() => {
-    const fetchQuotationDetail = async () => {
-      try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await api.get(`/quotations/${id}`, config);
-        setQuotation(res.data);
-      } catch (error) {
-        console.error(
-          "Error cargando la cotización:",
-          error.response?.data || error.message
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchQuotation();
+  }, [id]);
 
-    fetchQuotationDetail();
-  }, [id, token]);
-
-  // Función para aprobar cotización
-  const handleApprove = async () => {
+  // 🔹 Actualizar estado
+  const updateStatus = async () => {
     try {
+      const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await api.put(`/quotations/${id}/approve`, {}, config);
-      alert("Cotización aprobada");
-      navigate("/cotizaciones");
-    } catch (error) {
-      console.error("Error al aprobar:", error);
+      await api.put(`/quotations/${id}`, { estatus: status }, config);
+      alert("Estado actualizado");
+      fetchQuotation();
+    } catch (err) {
+      console.error(err);
+      alert("Error actualizando estado");
     }
   };
 
-  // Función para eliminar cotización
-  const handleDelete = async () => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta cotización?")) return;
-
-    try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await api.delete(`/quotations/${id}`, config);
-      alert("Cotización eliminada");
-      navigate("/cotizaciones");
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-    }
-  };
-
-  // Función para imprimir (redirigir a QuotationPDFView con datos)
+  // 🔹 Navegar a PDF
   const handlePrint = () => {
-    // Guardamos en localStorage por si el usuario recarga la página de impresión
     localStorage.setItem("currentQuotation", JSON.stringify(quotation));
-
-    // Navegamos a la vista de impresión con la cotización en state
-    navigate(`/cotizacion/pdf/${id}`, { state: quotation });
+    navigate("/cotizacion-pdf", { state: quotation });
   };
-
-  if (loading) {
-    return <div className="p-6 text-gray-600">Cargando cotización...</div>;
-  }
 
   if (!quotation) {
-    return <div className="p-6 text-red-500">Cotización no encontrada.</div>;
+    return (
+      <div className="p-6 text-center">
+        <p>Cargando cotización...</p>
+      </div>
+    );
   }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      <div
-        className={`flex-1 ${
-          sidebarOpen ? "ml-64" : ""
-        } transition-all duration-300`}
-      >
-        {/* Navbar */}
+      <div className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all`}>
         <TopNavbar onToggleSidebar={toggleSidebar} />
+        <main className="p-6 max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Detalle de Cotización</h1>
 
-        <main>
-          <div className="p-6">
-            {/* Botón volver */}
-            <Link
-              to="/cotizaciones"
-              className="text-blue-600 hover:underline flex items-center mb-4"
-            >
-              <ArrowLeft className="mr-2" size={16} /> Volver a Cotizaciones
-            </Link>
-
-            {/* Encabezado */}
-            <h1 className="text-2xl font-bold mb-2">
-              Cotización #{quotation.id_quotation}
-            </h1>
-            <p className="text-gray-600 mb-4">
-              Estado:{" "}
-              <span
-                className={`px-2 py-1 rounded ${
-                  quotation.estado === "approved"
-                    ? "bg-green-100 text-green-700"
-                    : quotation.estado === "rejected"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {quotation.estado}
-              </span>
-            </p>
-
-            {/* Información general */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-lg shadow mb-6">
-              <p>
-                <strong>Cliente:</strong> {quotation.cliente}
-              </p>
-              <p>
-                <strong>NIT:</strong> {quotation.nit || "N/A"}
-              </p>
-              <p>
-                <strong>Teléfono:</strong> {quotation.telefono || "N/A"}
-              </p>
-              <p>
-                <strong>Email:</strong> {quotation.email || "N/A"}
-              </p>
-              <p>
-                <strong>Placa:</strong> {quotation.placa}
-              </p>
-              <p>
-                <strong>Vehículo:</strong> {quotation.vehiculo}
-              </p>
-              <p>
-                <strong>Modelo:</strong> {quotation.modelo}
-              </p>
-              <p>
-                <strong>Kilometraje:</strong> {quotation.kilometraje} km
-              </p>
-              <p>
-                <strong>Fecha:</strong>{" "}
-                {new Date(quotation.fecha_cotizacion).toLocaleDateString()}
-              </p>
+          {/* 🔹 Datos generales */}
+          <div className="bg-white shadow rounded p-4 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Información del Cliente</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <p><strong>Cliente:</strong> {quotation.cliente}</p>
+              <p><strong>Teléfono:</strong> {quotation.telefono}</p>
+              <p><strong>Email:</strong> {quotation.email}</p>
+              <p><strong>Placa:</strong> {quotation.placa}</p>
+              <p><strong>Vehículo:</strong> {quotation.vehiculo}</p>
+              <p><strong>Kilometraje:</strong> {quotation.kilometraje}</p>
+              <p><strong>Fecha:</strong> {new Date(quotation.fecha).toLocaleDateString()}</p>
+              <p><strong>Observaciones:</strong> {quotation.observaciones || "N/A"}</p>
             </div>
+          </div>
 
-            {/* Tabla de Items */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
-              <h2 className="text-lg font-semibold mb-4">
-                Productos Cotizados
-              </h2>
-              <table className="min-w-full border border-gray-200">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Producto</th>
-                    <th className="border p-2">Cantidad</th>
-                    <th className="border p-2">Precio</th>
-                    <th className="border p-2">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotation.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{item.nombre}</td>
-                      <td className="border p-2">{item.quantity}</td>
-                      <td className="border p-2">${item.price}</td>
-                      <td className="border p-2">
-                        ${item.price * item.quantity}
+          {/* 🔹 Items */}
+          <div className="bg-white shadow rounded p-4 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Servicios / Productos</h2>
+            <table className="w-full border-collapse border">
+              <thead className="bg-gray-200">
+                <tr>
+                  <th className="border p-2">Descripción</th>
+                  <th className="border p-2">Cantidad</th>
+                  <th className="border p-2">Precio Unitario</th>
+                  <th className="border p-2">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quotation.items?.length > 0 ? (
+                  quotation.items.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50">
+                      <td className="border p-2">{item.descripcion}</td>
+                      <td className="border p-2 text-center">{item.cantidad}</td>
+                      <td className="border p-2 text-center">${item.precio.toFixed(2)}</td>
+                      <td className="border p-2 text-center">
+                        ${(item.cantidad * item.precio).toFixed(2)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="p-4 text-center text-gray-500">
+                      No hay items registrados
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            {/* Totales */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
-              <p>
-                <strong>Subtotal:</strong> ${quotation.subtotal}
-              </p>
-              <p>
-                <strong>Descuento:</strong> ${quotation.discount}
-              </p>
-              <p>
-                <strong>Total:</strong> ${quotation.total}
-              </p>
-            </div>
+          {/* 🔹 Totales */}
+          <div className="bg-white shadow rounded p-4 mb-6 text-right">
+            <p><strong>Subtotal:</strong> ${quotation.subtotal?.toFixed(2)}</p>
+            {quotation.descuento > 0 && (
+              <p><strong>Descuento:</strong> -${quotation.descuento?.toFixed(2)}</p>
+            )}
+            <p className="text-lg font-bold"><strong>Total:</strong> ${quotation.total?.toFixed(2)}</p>
+          </div>
 
-            {/* Botones de acción */}
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={handleApprove}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          {/* 🔹 Acciones */}
+          <div className="bg-white shadow rounded p-4 flex justify-between items-center">
+            <div>
+              <label className="mr-2 font-semibold">Estado:</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="border p-2 rounded"
               >
-                <CheckCircle className="mr-2" size={18} /> Aprobar
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="rechazada">Rechazada</option>
+              </select>
+              <button
+                onClick={updateStatus}
+                className="ml-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Guardar Estado
+              </button>
+            </div>
+            <div>
+              <button
+                onClick={() => navigate(-1)}
+                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Volver
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="ml-3 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
               >
-                <Printer className="mr-2" size={18} /> Imprimir
-              </button>
-              <Link
-                to={`/cotizaciones/editar/${quotation.id_quotation}`}
-                className="bg-yellow-500 text-white px-4 py-2 rounded"
-              >
-                Editar
-              </Link>
-              <button
-                onClick={handleDelete}
-                className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                <Trash2 className="mr-2" size={18} /> Eliminar
+                Imprimir / PDF
               </button>
             </div>
           </div>

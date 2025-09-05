@@ -1,276 +1,247 @@
-// models/QuotationModel.js
-// ================================================
-// Modelo para gestionar la tabla "quotations"
-// CRUD completo + funciones para stock
-// ================================================
 
 const pool = require('../config/db'); // Conexión a PostgreSQL
 
 const QuotationModel = {
-    /**
-     * Crear nueva cotización
-     */
-    async createQuotation(data) {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
+  /**
+   * Crear una nueva cotización con sus items
+   * @param {Object} quotationData - Datos de la cotización
+   * @param {Array} items - Lista de items [{cantidad, descripcion, precio_unitario, total}]
+   */
+  async createQuotation(quotationData, items = []) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-            const {
-                cliente,
-                nit,
-                telefono,
-                email,
-                placa,
-                vehiculo,
-                modelo,
-                fecha_cotizacion,
-                estado = 'pending',
-                total,
-                kilometraje,
-                subtotal,
-                discount,
-                items = []
-            } = data;
+    // 🔹 Buscar o crear cliente
+    let idCliente;
+    const clientRes = await client.query(
+      `SELECT id_cliente FROM clientes WHERE nombre = $1 LIMIT 1`,
+      [quotationData.cliente]
+    );
+    if (clientRes.rows.length > 0) {
+      idCliente = clientRes.rows[0].id_cliente;
+    } else {
+      const insertClient = await client.query(
+        `INSERT INTO clientes (nombre, celular, email) VALUES ($1, $2, $3) RETURNING id_cliente`,
+        [quotationData.cliente, quotationData.telefono, quotationData.email]
+      );
+      idCliente = insertClient.rows[0].id_cliente;
+    }
 
-            // Insertar cotización
-            const insertQuotationQuery = `
-        INSERT INTO quotations (
-          cliente, nit, telefono, email, placa,
-          vehiculo, modelo, fecha_cotizacion, estado,
-          total, kilometraje, subtotal, discount
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-        RETURNING id_quotation;
-      `;
+    // 🔹 Buscar o crear vehículo
+    let idVehiculo;
+    const vehRes = await client.query(
+      `SELECT id_vehiculo FROM vehiculos WHERE placa = $1 LIMIT 1`,
+      [quotationData.placa]
+    );
+    if (vehRes.rows.length > 0) {
+      idVehiculo = vehRes.rows[0].id_vehiculo;
+    } else {
+      const insertVeh = await client.query(
+        `INSERT INTO vehiculos (id_cliente, placa, marca, modelo, año)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id_vehiculo`,
+        [idCliente, quotationData.placa, quotationData.marca, quotationData.modelo, quotationData.año]
+      );
+      idVehiculo = insertVeh.rows[0].id_vehiculo;
+    }
 
-            const quotationResult = await client.query(insertQuotationQuery, [
-                cliente, nit, telefono, email, placa,
-                vehiculo, modelo, fecha_cotizacion, estado,
-                total, kilometraje, subtotal, discount
-            ]);
-
-            const quotationId = quotationResult.rows[0].id_quotation;
-
-            // Insertar items relacionados
-            const insertItemQuery = `
-        INSERT INTO quotation_items (id_quotation, id_product, quantity, price)
-        VALUES ($1, $2, $3, $4);
-      `;
-
-            for (const item of items) {
-                const { id_product, quantity, price } = item;
-                await client.query(insertItemQuery, [quotationId, id_product, quantity, price]);
-            }
-
-            await client.query('COMMIT');
-            return { success: true, message: 'Cotización creada exitosamente', id: quotationId };
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Error al crear cotización:', error);
-            throw error;
-        } finally {
-            client.release();
-        }
-    },
-
-    /**
-     * Obtener todas las quotations
-     */
-    async getAllQuotations() {
-        const query = `SELECT * FROM quotations ORDER BY fecha_cotizacion DESC;`;
-        const result = await pool.query(query);
-        return result.rows;
-    },
-
-    /**
-     * Obtener cotización por ID con sus items
-     */
-    async getQuotationById(id) {
-        const client = await pool.connect();
-        try {
-            await client.query("BEGIN");
-
-            // 🔹 Buscar la cotización principal
-            const quotationQuery = `
-      SELECT * FROM quotations WHERE id_quotation = $1;
-    `;
-            const quotationResult = await client.query(quotationQuery, [id]);
-
-            if (quotationResult.rows.length === 0) return null;
-
-            const quotation = quotationResult.rows[0];
-
-            // 🔹 Obtener los items y unir con la tabla repuestos
-            const itemsQuery = `
-      SELECT 
-        qi.id_quotation_item,
-        qi.id_product,
-        qi.cantidad,
-        qi.precio,
-        r.nombre,
-        r.descripcion
-      FROM quotation_items qi
-      JOIN repuestos r ON qi.id_product = r.id_product
-      WHERE qi.id_quotation = $1;
-    `;
-            const itemsResult = await client.query(itemsQuery, [id]);
-            quotation.items = itemsResult.rows;
-
-            await client.query("COMMIT");
-            return quotation;
-        } catch (error) {
-            await client.query("ROLLBACK");
-            console.error("Error al obtener cotización:", error);
-            throw error;
-        } finally {
-            client.release();
-        }
-    },
-
-
-    /**
-     * Actualizar cotización
-     */
-    async updateQuotation(id, data) {
-        const {
-            cliente, nit, telefono, email, placa, vehiculo, modelo,
-            fecha_cotizacion, estado, total, kilometraje, subtotal, discount
-        } = data;
-
-        const query = `
-      UPDATE quotations
-      SET cliente=$1, nit=$2, telefono=$3, email=$4,
-          placa=$5, vehiculo=$6, modelo=$7,
-          fecha_cotizacion=$8, estado=$9, total=$10,
-          kilometraje=$11, subtotal=$12, discount=$13
-      WHERE id_quotation=$14
+    // 🔹 Insertar cotización
+    const insertQuotationQuery = `
+      INSERT INTO cotizaciones 
+        (id_cliente, id_vehiculo, tecnico, kilometraje, fecha, observaciones, estatus, descuento, subtotal, total)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *;
     `;
+    const quotationValues = [
+      idCliente,
+      idVehiculo,
+      quotationData.tecnico,
+      quotationData.kilometraje,
+      quotationData.fecha || new Date(),
+      quotationData.observaciones || null,
+      quotationData.estatus || "pendiente",
+      quotationData.descuento || 0,
+      quotationData.subtotal,
+      quotationData.total,
+    ];
+    const { rows: quotationRows } = await client.query(insertQuotationQuery, quotationValues);
+    const quotation = quotationRows[0];
 
-        const result = await pool.query(query, [
-            cliente, nit, telefono, email, placa, vehiculo, modelo,
-            fecha_cotizacion, estado, total, kilometraje, subtotal, discount, id
-        ]);
-
-        return result.rows[0];
-    },
-
-    /**
-     * Eliminar cotización
-     */
-    async deleteQuotation(id) {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            await client.query(`DELETE FROM quotation_items WHERE id_quotation = $1;`, [id]);
-            await client.query(`DELETE FROM quotations WHERE id_quotation = $1;`, [id]);
-
-            await client.query('COMMIT');
-            return { success: true, message: 'Cotización eliminada correctamente' };
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Error al eliminar cotización:', error);
-            throw error;
-        } finally {
-            client.release();
-        }
-    },
-
-    /**
-     * Buscar quotations por placa
-     */
-    async findQuotationsByPlaca(placa) {
-        const query = `
-      SELECT * FROM quotations
-      WHERE placa ILIKE $1
-      ORDER BY fecha_cotizacion DESC;
+    // 🔹 Insertar items
+    const insertItemQuery = `
+      INSERT INTO cotizacion_items 
+        (id_cotizacion, cantidad, descripcion, precio_unitario, total)
+      VALUES ($1, $2, $3, $4, $5);
     `;
-        const result = await pool.query(query, [`%${placa}%`]);
-        return result.rows;
-    },
-
-    /**
-     * Cambiar estado de cotización
-     */
-    async updateQuotationStatus(id, status) {
-        const query = `UPDATE quotations SET estado=$1 WHERE id_quotation=$2 RETURNING *;`;
-        const result = await pool.query(query, [status, id]);
-        return result.rows[0];
-    },
-
-    /**
-     * Verificar si hay stock suficiente para cada producto
-     * items: [{id_product, quantity}]
-     */
-    async checkStockAvailability(items) {
-        const client = await pool.connect();
-        try {
-            const insufficientStock = [];
-
-            for (const item of items) {
-                const { id_product, quantity } = item;
-                const query = `SELECT stock_actual, nombre FROM repuestos WHERE id_product = $1;`;
-                const result = await client.query(query, [id_product]);
-
-                if (result.rows.length === 0) {
-                    insufficientStock.push({ id_product, message: 'Producto no encontrado' });
-                    continue;
-                }
-
-                const { stock_actual, nombre } = result.rows[0];
-                if (stock_actual < quantity) {
-                    insufficientStock.push({
-                        id_product,
-                        nombre,
-                        disponible: stock_actual,
-                        requerido: quantity
-                    });
-                }
-            }
-
-            return insufficientStock; // Vacío si todo ok
-        } catch (error) {
-            console.error('Error al verificar stock:', error);
-            throw error;
-        } finally {
-            client.release();
-        }
-    },
-
-    /**
-     * Actualizar stock al aprobar una cotización
-     * Resta la cantidad de cada producto en "repuestos.stock_actual"
-     */
-    async updateStockOnApproval(quotationId) {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            // Obtener los items de la cotización
-            const itemsQuery = `SELECT id_product, quantity FROM quotation_items WHERE id_quotation = $1;`;
-            const itemsResult = await client.query(itemsQuery, [quotationId]);
-
-            for (const item of itemsResult.rows) {
-                const { id_product, quantity } = item;
-                await client.query(
-                    `UPDATE repuestos
-           SET stock_actual = stock_actual - $1
-           WHERE id_product = $2;`,
-                    [quantity, id_product]
-                );
-            }
-
-            await client.query('COMMIT');
-            return { success: true, message: 'Stock actualizado correctamente' };
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error('Error al actualizar stock:', error);
-            throw error;
-        } finally {
-            client.release();
-        }
+    for (const item of items) {
+      await client.query(insertItemQuery, [
+        quotation.id_cotizacion,
+        item.cantidad,
+        item.descripcion,
+        item.precio_unitario,
+        item.total,
+      ]);
     }
+
+    await client.query("COMMIT");
+    return quotation;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+},
+
+
+  /**
+   * Obtener cotización por ID con items
+   */
+  async getQuotationById(id) {
+    const quotationQuery = `
+      SELECT c.*, cl.nombre AS cliente_nombre, v.placa AS vehiculo_placa
+      FROM cotizaciones c
+      JOIN clientes cl ON c.id_cliente = cl.id_cliente
+      JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+      WHERE c.id_cotizacion = $1;
+    `;
+
+    const itemsQuery = `
+      SELECT * FROM cotizacion_items WHERE id_cotizacion = $1;
+    `;
+
+    const quotationResult = await pool.query(quotationQuery, [id]);
+    const itemsResult = await pool.query(itemsQuery, [id]);
+
+    if (quotationResult.rows.length === 0) return null;
+
+    return {
+      ...quotationResult.rows[0],
+      items: itemsResult.rows,
+    };
+  },
+
+  /**
+   * Listar cotizaciones con filtros (cliente, placa, estatus, fecha)
+   */
+  async getQuotations({ cliente, placa, estatus, fecha }) {
+    let baseQuery = `
+      SELECT c.id_cotizacion, c.fecha, c.estatus, c.total, cl.nombre AS cliente_nombre, v.placa AS vehiculo_placa
+      FROM cotizaciones c
+      JOIN clientes cl ON c.id_cliente = cl.id_cliente
+      JOIN vehiculos v ON c.id_vehiculo = v.id_vehiculo
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIndex = 1;
+
+    if (cliente) {
+      baseQuery += ` AND cl.nombre ILIKE $${paramIndex++}`;
+      params.push(`%${cliente}%`);
+    }
+    if (placa) {
+      baseQuery += ` AND v.placa ILIKE $${paramIndex++}`;
+      params.push(`%${placa}%`);
+    }
+    if (estatus) {
+      baseQuery += ` AND c.estatus = $${paramIndex++}`;
+      params.push(estatus);
+    }
+    if (fecha) {
+      baseQuery += ` AND c.fecha = $${paramIndex++}`;
+      params.push(fecha);
+    }
+
+    baseQuery += ` ORDER BY c.fecha DESC;`;
+
+    const { rows } = await pool.query(baseQuery, params);
+    return rows;
+  },
+
+  /**
+   * Actualizar cotización
+   */
+  async updateQuotation(id, data) {
+    const query = `
+      UPDATE cotizaciones
+      SET tecnico = $1, kilometraje = $2, fecha = $3, observaciones = $4,
+          estatus = $5, descuento = $6, subtotal = $7, total = $8
+      WHERE id_cotizacion = $9
+      RETURNING *;
+    `;
+    const values = [
+      data.tecnico,
+      data.kilometraje,
+      data.fecha || new Date(),
+      data.observaciones,
+      data.estatus,
+      data.descuento,
+      data.subtotal,
+      data.total,
+      id,
+    ];
+    const { rows } = await pool.query(query, values);
+    return rows[0];
+  },
+
+  /**
+   * Eliminar cotización (y sus items por ON DELETE CASCADE)
+   */
+  async deleteQuotation(id) {
+    const query = `DELETE FROM cotizaciones WHERE id_cotizacion = $1 RETURNING *;`;
+    const { rows } = await pool.query(query, [id]);
+    return rows[0];
+  },
+
+  /**
+   * Agregar item a una cotización
+   */
+  async addItemToQuotation(idCotizacion, item) {
+    const query = `
+      INSERT INTO cotizacion_items (id_cotizacion, cantidad, descripcion, precio_unitario, total)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *;
+    `;
+    const values = [
+      idCotizacion,
+      item.cantidad,
+      item.descripcion,
+      item.precio_unitario,
+      item.total,
+    ];
+    const { rows } = await pool.query(query, values);
+    return rows[0];
+  },
+
+  /**
+   * Actualizar un item específico
+   */
+  async updateItem(idItem, data) {
+    const query = `
+      UPDATE cotizacion_items
+      SET cantidad = $1, descripcion = $2, precio_unitario = $3, total = $4
+      WHERE id_item = $5
+      RETURNING *;
+    `;
+    const values = [
+      data.cantidad,
+      data.descripcion,
+      data.precio_unitario,
+      data.total,
+      idItem,
+    ];
+    const { rows } = await pool.query(query, values);
+    return rows[0];
+  },
+
+  /**
+   * Eliminar un item específico
+   */
+  async deleteItem(idItem) {
+    const query = `DELETE FROM cotizacion_items WHERE id_item = $1 RETURNING *;`;
+    const { rows } = await pool.query(query, [idItem]);
+    return rows[0];
+  },
 };
 
 module.exports = QuotationModel;

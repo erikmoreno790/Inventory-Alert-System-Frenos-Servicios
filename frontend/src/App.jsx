@@ -14,7 +14,6 @@ import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
 import QuotationDetailPage from "./pages/QuotationDetailPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import QuotationTempPage from "./pages/QuotationTempPage";
-import QuotationDetailTempPage from "./pages/QuotationDetailTempPage";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -129,14 +128,6 @@ function App() {
           element={
             <PrivateRoute>
               <QuotationsHistoryPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/cotizacion-temporal"
-          element={
-            <PrivateRoute>
-              <QuotationTempPage />
             </PrivateRoute>
           }
         />

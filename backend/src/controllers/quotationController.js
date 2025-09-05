@@ -1,131 +1,135 @@
-const quotationModel = require('../models/quotationModel');
+const QuotationModel = require('../models/QuotationModel');
 
+const QuotationController = {
+  // Crear cotización con ítems
+  createQuotation: async (req, res) => {
+  try {
+    console.log("📦 Body recibido:", req.body); // <-- VERIFICA QUÉ LLEGA
+    const { cliente, telefono, email, placa, vehiculo, modelo, kilometraje, fechaVencimiento, discountPercent, items } = req.body;
 
-const newQuotation = async (req, res) => {
+    const quotationData = {
+      cliente,
+      telefono,
+      email,
+      placa,
+      vehiculo,
+      modelo,
+      kilometraje,
+      fecha: fechaVencimiento,
+      descuento: discountPercent,
+      subtotal: 0,
+      total: 0,
+    };
+
+    const quotation = await QuotationModel.createQuotation(quotationData, items);
+    res.status(201).json(quotation);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error creando la cotización" });
+  }
+},
+
+  // Obtener cotización por ID
+  async getQuotation(req, res) {
     try {
-        const quotationId = await quotationModel.createQuotation(req.body);
-        res.status(201).json({ id: quotationId });
+      const { id } = req.params;
+      const quotation = await QuotationModel.getQuotationById(id);
+      if (!quotation) {
+        return res.status(404).json({ success: false, message: 'Cotización no encontrada' });
+      }
+      res.json({ success: true, quotation });
     } catch (error) {
-        console.error('Error creating quotation:', error);
-        res.status(500).json({ message: 'Error creating quotation' });
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al obtener la cotización' });
     }
-}
+  },
 
-const getAll = async (req, res) => {
+  // Listar cotizaciones con filtros
+  async listQuotations(req, res) {
     try {
-        const quotations = await quotationModel.getAllQuotations();
-        res.json(quotations);
+      const { cliente, placa, estatus, fecha } = req.query;
+      const quotations = await QuotationModel.getQuotations({ cliente, placa, estatus, fecha });
+      res.json({ success: true, quotations });
     } catch (error) {
-        console.error('Error fetching quotations:', error);
-        res.status(500).json({ message: 'Error fetching quotations' });
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al listar cotizaciones' });
     }
+  },
+
+  // Actualizar cotización
+  async updateQuotation(req, res) {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+      const updated = await QuotationModel.updateQuotation(id, data);
+      if (!updated) {
+        return res.status(404).json({ success: false, message: 'Cotización no encontrada' });
+      }
+      res.json({ success: true, quotation: updated });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al actualizar la cotización' });
+    }
+  },
+
+  // Eliminar cotización
+  async deleteQuotation(req, res) {
+    try {
+      const { id } = req.params;
+      const deleted = await QuotationModel.deleteQuotation(id);
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: 'Cotización no encontrada' });
+      }
+      res.json({ success: true, message: 'Cotización eliminada' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al eliminar la cotización' });
+    }
+  },
+
+  // Agregar ítem a cotización
+  async addItem(req, res) {
+    try {
+      const { id } = req.params; // ID de la cotización
+      const item = req.body;
+      const newItem = await QuotationModel.addItemToQuotation(id, item);
+      res.status(201).json({ success: true, item: newItem });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al agregar el ítem' });
+    }
+  },
+
+  // Actualizar ítem
+  async updateItem(req, res) {
+    try {
+      const { itemId } = req.params;
+      const data = req.body;
+      const updated = await QuotationModel.updateItem(itemId, data);
+      if (!updated) {
+        return res.status(404).json({ success: false, message: 'Ítem no encontrado' });
+      }
+      res.json({ success: true, item: updated });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al actualizar el ítem' });
+    }
+  },
+
+  // Eliminar ítem
+  async deleteItem(req, res) {
+    try {
+      const { itemId } = req.params;
+      const deleted = await QuotationModel.deleteItem(itemId);
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: 'Ítem no encontrado' });
+      }
+      res.json({ success: true, message: 'Ítem eliminado' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error al eliminar el ítem' });
+    }
+  },
 };
 
-
-const getById = async (req, res) => {
-    try {
-        const quotation = await quotationModel.getQuotationById(req.params.id);
-        if (!quotation) {
-            return res.status(404).json({ message: 'Quotation not found' });
-        }
-        res.json(quotation);
-    } catch (error) {
-        console.error('Error fetching quotation:', error);
-        res.status(500).json({ message: 'Error fetching quotation' });
-    }
-};
-
-const updateQuotation = async (req, res) => {
-    try {
-        const updatedQuotation = await quotationModel.updateQuotation(req.params.id, req.body);
-        if (!updatedQuotation) {
-            return res.status(404).json({ message: 'Quotation not found' });
-        }
-        res.json(updatedQuotation);
-    } catch (error) {
-        console.error('Error updating quotation:', error);
-        res.status(500).json({ message: 'Error updating quotation' });
-    }
-};
-
-const deleteQuotation = async (req, res) => {
-    try {
-        const deleted = await quotationModel.deleteQuotation(req.params.id);
-        if (!deleted) {
-            return res.status(404).json({ message: 'Quotation not found' });
-        }
-        res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting quotation:', error);
-        res.status(500).json({ message: 'Error deleting quotation' });
-    }
-};
-
-
-// Controlador para buscar cotizaciones por placa
-const searchByPlaca = async (req, res) => {
-    try {
-        const { placa } = req.query;
-        const quotations = await quotationModel.findQuotationsByPlaca(placa);
-        res.json(quotations);
-    } catch (error) {
-        console.error('Error searching quotations by placa:', error);
-        res.status(500).json({ message: 'Error searching quotations by placa' });
-    }
-};
-
-// Controlador para cambiar el estado de una cotización
-const changeStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        const updatedQuotation = await quotationModel.updateQuotationStatus(id, status);
-        if (!updatedQuotation) {
-            return res.status(404).json({ message: 'Quotation not found' });
-        }
-        res.json(updatedQuotation);
-    } catch (error) {
-        console.error('Error updating quotation status:', error);
-        res.status(500).json({ message: 'Error updating quotation status' });
-    }
-};
-
-// Controlador para verificar disponibilidad de stock
-const checkStock = async (req, res) => {
-    try {
-        const { items } = req.body; // items: [{id_product, quantity}]
-        const insufficientStock = await quotationModel.checkStockAvailability(items);
-        res.json({ insufficientStock });
-    } catch (error) {
-        console.error('Error checking stock availability:', error);
-        res.status(500).json({ message: 'Error checking stock availability' });
-    }
-};
-
-// Controlador para actualizar stock al aprobar una cotización
-const updateStock = async (req, res) => {
-    try {
-        const { items } = req.body; // items: [{id_product, quantity}]
-        await quotationModel.updateStockOnApproval(items);
-        res.json({ message: 'Stock updated successfully' });
-    } catch (error) {
-        console.error('Error updating stock:', error);
-        res.status(500).json({ message: 'Error updating stock' });
-    }
-};
-
-
-
-
-
-module.exports = {
-    newQuotation,
-    getAll,
-    getById,
-    updateQuotation,
-    deleteQuotation,
-    searchByPlaca,
-    changeStatus,
-    checkStock,
-    updateStock
-};
+module.exports = QuotationController;

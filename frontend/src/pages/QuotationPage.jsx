@@ -1,3 +1,4 @@
+// QuotationPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -14,33 +15,32 @@ import TopNavbar from "../components/TopNavbar";
 import api from "../api";
 
 const QuotationsPage = () => {
-  const { id } = useParams(); // 🔹 ID de cotización para edición
+  const { id } = useParams(); // ID de cotización si es edición
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [servicesList, setServicesList] = useState([]);
-  const [inventoryList, setInventoryList] = useState([]);
+  const [inventoryList, setInventoryList] = useState([]); // Inventario cargado desde backend
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const formData = useSelector((state) => state.quotation);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // 🔹 Cargar solo inventario (ya no servicios)
+  // 🔹 Cargar inventario
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInventory = async () => {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const inventoryRes = await api.get("/products", config);
-        setInventoryList(inventoryRes.data);
+        const { data } = await api.get("/products", config);
+        setInventoryList(data);
       } catch (err) {
         console.error(err);
-        alert("Error cargando datos iniciales");
+        alert("Error cargando inventario");
       }
     };
-    fetchData();
+    fetchInventory();
   }, []);
 
-  // 🔹 Cargar cotización existente si hay `id`
+  // 🔹 Cargar cotización existente
   useEffect(() => {
     const fetchQuotation = async () => {
       if (!id) return;
@@ -49,47 +49,42 @@ const QuotationsPage = () => {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const { data } = await api.get(`/quotations/${id}`, config);
 
-        // 🔹 Llenar campos de cliente
+        // Datos generales
         dispatch(
           updateFormData({
             cliente: data.cliente,
-            nit: data.nit,
             telefono: data.telefono,
             email: data.email,
             placa: data.placa,
             vehiculo: data.vehiculo,
-            modelo: data.modelo,
             kilometraje: data.kilometraje,
-            fechaVencimiento: data.fecha_cotizacion?.split("T")[0] || "",
+            fechaVencimiento: data.fecha || "",
             discountPercent: data.discount_percent || 0,
           })
         );
 
-        // 🔹 Llenar items
-        if (data.items && data.items.length > 0) {
+        // Ítems
+        if (data.items?.length > 0) {
           data.items.forEach((item) => {
             dispatch(
               addItem({
-                tipo: item.tipo || "repuesto",
-                descripcion: item.nombre || item.descripcion,
+                tipo: "repuesto",
+                descripcion: item.descripcion,
                 cantidad: item.cantidad,
-                precio: item.precio,
-                productId: item.id_product || null,
-                origen: "lista",
+                precio_unitario: parseFloat(item.precio_unitario),
+                productId: item.product_id || null,
               })
             );
           });
         }
       } catch (err) {
         console.error(err);
-        alert("Error cargando cotización");
+        alert("Error cargando la cotización");
       }
     };
 
-    if (id) {
-      dispatch(resetForm()); // Limpia antes de rellenar
-      fetchQuotation();
-    }
+    dispatch(resetForm());
+    if (id) fetchQuotation();
   }, [id, dispatch]);
 
   // 🔹 Recalcular totales
@@ -103,60 +98,31 @@ const QuotationsPage = () => {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      if (id) {
-        // 🔹 Actualizar cotización existente
-        await api.put(
-          `/quotations/${id}`,
-          {
-            cliente: formData.cliente,
-            nit: formData.nit,
-            telefono: formData.telefono,
-            email: formData.email,
-            placa: formData.placa,
-            vehiculo: formData.vehiculo,
-            modelo: formData.modelo,
-            kilometraje: formData.kilometraje,
-            fechaVencimiento: formData.fechaVencimiento,
-            discountPercent: formData.discountPercent,
-            items: formData.items, // 🔹 Enviar todos los items
-          },
-          config
-        );
+      const quotationData = {
+        ...formData,
+        subtotal: formData.subtotal,
+        discount: formData.discount,
+        total: formData.total,
+        items: formData.items,
+      };
 
+      if (id) {
+        await api.put(`/quotations/${id}`, quotationData, config);
         alert("Cotización actualizada con éxito");
       } else {
-        // 🔹 Crear nueva cotización
-        const { data: quotation } = await api.post(
+        const { data: newQuotation } = await api.post(
           "/quotations",
-          {
-            cliente: formData.cliente,
-            nit: formData.nit,
-            telefono: formData.telefono,
-            email: formData.email,
-            placa: formData.placa,
-            vehiculo: formData.vehiculo,
-            modelo: formData.modelo,
-            kilometraje: formData.kilometraje,
-            fechaVencimiento: formData.fechaVencimiento,
-            discountPercent: formData.discountPercent,
-          },
+          quotationData,
           config
         );
 
         for (const item of formData.items) {
           await api.post(
-            `/quotations/${quotation.id}/items`,
-            {
-              tipo: item.tipo,
-              descripcion: item.descripcion,
-              cantidad: item.cantidad,
-              precio: item.precio,
-              productId: item.productId || null,
-            },
+            `/quotations/${newQuotation.id}/items`,
+            { ...item },
             config
           );
         }
-
         alert("Cotización creada con éxito");
       }
 
@@ -164,75 +130,66 @@ const QuotationsPage = () => {
       navigate("/historial-cotizaciones");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Error al guardar la cotización");
+      alert(err.response?.data?.message || "Error guardando cotización");
     }
   };
 
+  // 🔹 Cambiar datos generales
   const handleChange = (e) => {
     dispatch(updateFormData({ [e.target.name]: e.target.value }));
   };
 
-  const addManualItem = (tipo) => {
+  // 🔹 Agregar item manual
+  const addManualItem = () => {
     dispatch(
       addItem({
-        tipo,
+        tipo: "repuesto",
         descripcion: "",
         cantidad: 1,
-        precio: 0,
-        origen: "manual",
+        precio_unitario: 0,
       })
     );
   };
 
-  const addFromList = (tipo) => {
-    const list = tipo === "servicio" ? servicesList : inventoryList;
+  // 🔹 Agregar item desde inventario
+  const addFromInventory = () => {
     const selected = window.prompt(
-      `Escribe el ID del ${tipo} que deseas agregar:\n` +
-        list.map((el) => `${el.id} - ${el.nombre}`).join("\n")
+      "Escribe el ID del producto que deseas agregar:\n" +
+        inventoryList.map((el) => `${el.id} - ${el.nombre}`).join("\n")
     );
-    const itemData = list.find((el) => el.id.toString() === selected);
+    const itemData = inventoryList.find(
+      (el) => el.id.toString() === selected
+    );
     if (itemData) {
       dispatch(
         addItem({
-          tipo,
+          tipo: "repuesto",
           descripcion: itemData.nombre,
           cantidad: 1,
-          precio: itemData.precio || 0,
-          origen: "lista",
-          productId: tipo === "repuesto" ? itemData.id : null,
+          precio_unitario: itemData.precio_unitario || 0,
+          productId: itemData.id,
         })
       );
     }
   };
 
+  // 🔹 Actualizar item
   const handleItemChange = (index, field, value) => {
     dispatch(
       updateItem({
         index,
         field,
         value:
-          field === "cantidad" || field === "precio" ? Number(value) : value,
+          field === "cantidad" || field === "precio_unitario"
+            ? Number(value)
+            : value,
       })
     );
   };
 
+  // 🔹 Eliminar item
   const removeItemHandler = (index) => {
     dispatch(removeItem(index));
-  };
-
-  const applyDiscount = () => {
-    const input = prompt("Ingrese el descuento en porcentaje (0-100):");
-    if (!input) return;
-    const percent = parseFloat(input.trim());
-    if (!isNaN(percent) && percent >= 0 && percent <= 100) {
-      dispatch(updateFormData({ discountPercent: percent }));
-    } else {
-      alert("Por favor ingrese un número válido");
-    }
-  };
-
-  const handlePrint = () => {
-    navigate("/cotizacion/pdf", { state: formData });
   };
 
   return (
@@ -246,34 +203,33 @@ const QuotationsPage = () => {
         <TopNavbar onToggleSidebar={toggleSidebar} />
         <main>
           <div className="p-6 max-w-4xl mx-auto">
+            {/* Encabezado */}
             <div className="flex justify-between items-center border-b pb-4 mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">
+              <h2 className="text-3xl font-bold">
                 {id ? "Editar Cotización" : "Nueva Cotización"}
               </h2>
               <button
                 onClick={() => navigate(-1)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+                className="bg-gray-500 text-white px-4 py-2 rounded"
               >
                 Regresar
               </button>
             </div>
 
-            {/* Campos cliente */}
+            {/* Campos de cotización */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               {[
                 "cliente",
-                "nit",
                 "telefono",
                 "email",
                 "placa",
                 "vehiculo",
-                "modelo",
                 "kilometraje",
               ].map((field) => (
                 <input
                   key={field}
                   name={field}
-                  value={formData[field]}
+                  value={formData[field] || ""}
                   onChange={handleChange}
                   placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
                   className="border p-2"
@@ -282,37 +238,25 @@ const QuotationsPage = () => {
               <input
                 type="date"
                 name="fechaVencimiento"
-                value={formData.fechaVencimiento}
+                value={formData.fechaVencimiento || ""}
                 onChange={handleChange}
                 className="border p-2"
               />
             </div>
 
-            {/* Botones agregar */}
+            {/* Botones de agregar */}
             <div className="flex gap-2 mb-4">
               <button
-                onClick={() => addFromList("servicio")}
+                onClick={addFromInventory}
                 className="bg-blue-500 text-white px-3 py-1 rounded"
               >
-                Servicio desde lista
+                Agregar desde inventario
               </button>
               <button
-                onClick={() => addManualItem("servicio")}
+                onClick={addManualItem}
                 className="bg-green-500 text-white px-3 py-1 rounded"
               >
-                Servicio manual
-              </button>
-              <button
-                onClick={() => addFromList("repuesto")}
-                className="bg-blue-500 text-white px-3 py-1 rounded"
-              >
-                Repuesto desde inventario
-              </button>
-              <button
-                onClick={() => addManualItem("repuesto")}
-                className="bg-green-500 text-white px-3 py-1 rounded"
-              >
-                Repuesto manual
+                Agregar manual
               </button>
             </div>
 
@@ -320,7 +264,6 @@ const QuotationsPage = () => {
             <table className="w-full border mb-4">
               <thead className="bg-gray-200">
                 <tr>
-                  <th className="border p-2">Tipo</th>
                   <th className="border p-2">Descripción</th>
                   <th className="border p-2">Cantidad</th>
                   <th className="border p-2">Precio</th>
@@ -331,7 +274,6 @@ const QuotationsPage = () => {
               <tbody>
                 {formData.items.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="border p-2">{item.tipo}</td>
                     <td className="border p-2">
                       <input
                         value={item.descripcion}
@@ -354,17 +296,24 @@ const QuotationsPage = () => {
                     <td className="border p-2">
                       <input
                         type="number"
-                        value={item.precio}
+                        value={item.precio_unitario}
                         onChange={(e) =>
-                          handleItemChange(idx, "precio", e.target.value)
+                          handleItemChange(idx, "precio_unitario", e.target.value)
                         }
                         className="border p-1 w-24"
                       />
                     </td>
                     <td className="border p-2">
-                      {(item.cantidad * item.precio).toFixed(2)}
+                      {(item.cantidad * item.precio_unitario).toLocaleString(
+                        "es-CO",
+                        {
+                          style: "currency",
+                          currency: "COP",
+                          minimumFractionDigits: 2,
+                        }
+                      )}
                     </td>
-                    <td className="border p-2">
+                    <td className="border p-2 text-center">
                       <button
                         onClick={() => removeItemHandler(idx)}
                         className="bg-red-500 text-white px-2 py-1 rounded"
@@ -378,20 +327,57 @@ const QuotationsPage = () => {
             </table>
 
             {/* Descuento */}
-            <button
-              onClick={applyDiscount}
-              className="bg-yellow-500 text-white px-4 py-2 rounded mb-4"
-            >
-              Aplicar Descuento
-            </button>
+            <div className="mb-4 flex items-center gap-4">
+              <label className="font-medium text-gray-700">Descuento (%):</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={formData.discountPercent || 0}
+                onChange={(e) => {
+                  let value = Number(e.target.value);
+                  if (isNaN(value)) value = 0;
+                  if (value < 0) value = 0;
+                  if (value > 100) value = 100;
+                  dispatch(updateFormData({ discountPercent: value }));
+                }}
+                className="border p-2 w-24"
+              />
+              {formData.discountPercent > 0 && (
+                <span className="text-gray-700 font-medium">
+                  Aplicado: {formData.discountPercent}%
+                </span>
+              )}
+            </div>
 
             {/* Totales */}
-            <div className="text-right mb-4">
-              <p>Subtotal: ${formData.subtotal.toFixed(2)}</p>
+            <div className="text-right mb-6 border-t pt-4">
+              <p className="text-gray-700">
+                Subtotal:{" "}
+                {formData.subtotal.toLocaleString("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 2,
+                })}
+              </p>
               {formData.discount > 0 && (
-                <p>Descuento: -${formData.discount.toFixed(2)}</p>
+                <p className="text-yellow-600">
+                  Descuento: -{" "}
+                  {formData.discount.toLocaleString("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
               )}
-              <p className="font-bold">Total: ${formData.total.toFixed(2)}</p>
+              <p className="font-bold text-2xl text-green-700">
+                Total a pagar:{" "}
+                {formData.total.toLocaleString("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                  minimumFractionDigits: 2,
+                })}
+              </p>
             </div>
 
             {/* Botones finales */}
@@ -401,12 +387,6 @@ const QuotationsPage = () => {
                 className="bg-indigo-600 text-white px-4 py-2 rounded"
               >
                 {id ? "Actualizar Cotización" : "Guardar Cotización"}
-              </button>
-              <button
-                onClick={handlePrint}
-                className="bg-gray-600 text-white px-4 py-2 rounded"
-              >
-                Imprimir
               </button>
             </div>
           </div>
