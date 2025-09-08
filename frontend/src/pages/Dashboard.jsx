@@ -8,6 +8,7 @@ import api from "../api";
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [totalProductos, setTotalProductos] = useState(0);
+  const [totalCotizaciones, setTotalCotizaciones] = useState(0);
   const [bajoStock, setBajoStock] = useState(0);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,15 +28,18 @@ const DashboardPage = () => {
           },
         };
 
-        const [productosRes, alertasRes] = await Promise.all([
+        const [productosRes, alertasRes, cotizacionesRes] = await Promise.all([
           api.get("/products", config),
           api.get("/alerts", config), // Ajusta si tu ruta es diferente
+          api.get("/cotizaciones", config), // Ajusta si tu ruta es diferente
         ]);
 
         const productos = productosRes.data;
         const alertasActivas = alertasRes.data;
+        const cotizaciones = cotizacionesRes.data;
 
         setTotalProductos(productos.length);
+        setTotalCotizaciones(cotizaciones.length);
         setBajoStock(productos.filter((p) => p.stock < p.stock_minimo).length);
         setAlertas(alertasActivas.slice(0, 5)); // últimas 5 alertas
       } catch (error) {
@@ -69,6 +73,14 @@ const DashboardPage = () => {
             <>
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                  <PlusCircle className="text-green-600" />
+                  <div>
+                    <p className="text-gray-600 text-sm">Total Cotizaciones</p>
+                    <p className="text-xl font-bold">{totalCotizaciones}</p>
+                  </div>
+                </div>
+
                 <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
                   <Boxes className="text-blue-600" />
                   <div>

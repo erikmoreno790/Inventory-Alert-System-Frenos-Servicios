@@ -21,12 +21,9 @@ const TopNavbar = ({ onToggleSidebar }) => {
       if (!token) return;
 
       try {
-        const response = await api.get(
-          "/auth/validate",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await api.get("/auth/validate", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         const data = response.data;
         setUserName(data.user.nombre || data.user.email || "Usuario");
@@ -64,7 +61,7 @@ const TopNavbar = ({ onToggleSidebar }) => {
         <button
           title="Nueva orden"
           className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium"
-          onClick={() => (window.location.href = "/ordenes-servicio/nueva")}
+          onClick={() => (window.location.href = "/cotizacion")}
         >
           <FilePlus size={18} />
           <span>Nuevo Servicio</span>
@@ -73,10 +70,10 @@ const TopNavbar = ({ onToggleSidebar }) => {
         <button
           title="Entrar a Taller"
           className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-sm font-medium"
-          onClick={() => (window.location.href = "/mecanicos")}
+          onClick={() => (window.location.href = "/inventario")}
         >
           <Wrench size={18} />
-          <span>Taller</span>
+          <span>Inventario</span>
         </button>
 
         <button title="Notificaciones" className="relative">

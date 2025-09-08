@@ -1,26 +1,55 @@
 import { useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useState } from "react";
+import api from "../api";
 import html2pdf from "html2pdf.js";
 import logo from "../assets/logo.png";
 
 const QuotationPDFView = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const pdfRef = useRef();
+  const [quotation, setQuotation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { id } = useParams();
 
-  // Intentar tomar datos de location.state, si no, del localStorage
-  const quotation =
-    location.state || JSON.parse(localStorage.getItem("currentQuotation"));
+  // Fetch quotation details
+  const fetchQuotation = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const { data } = await api.get(`/cotizaciones/${id}`, config);
+      setQuotation(data);
+    } catch (err) {
+      console.error(err);
+      alert("Error loading quotation details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on component mount
+  useState(() => {
+    fetchQuotation();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-lg text-gray-600">Loading details...</p>
+      </div>
+    );
+  }
 
   if (!quotation) {
     return (
       <div className="p-6 text-center">
-        <p>No hay datos de cotización para mostrar.</p>
+        <p className="text-gray-600">No quotation data to display.</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 bg-gray-600 text-white px-4 py-2 rounded"
+          className="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
         >
-          Volver
+          Regresar
         </button>
       </div>
     );
@@ -30,7 +59,7 @@ const QuotationPDFView = () => {
     const element = pdfRef.current;
     const opt = {
       margin: 0.5,
-      filename: `Cotizacion-${quotation.cliente || "cliente"}.pdf`,
+      filename: `Cotizacion-${quotation.nombre_cliente || "cliente"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
@@ -39,87 +68,116 @@ const QuotationPDFView = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen p-6 print:bg-white">
-      {/* 🔹 PLANTILLA PDF */}
+    <div className="bg-gray-50 min-h-screen p-8 print:bg-white">
+      {/* PDF Template */}
       <div
         ref={pdfRef}
-        className="bg-white p-8 rounded shadow max-w-3xl mx-auto"
-        style={{ fontFamily: "Arial, sans-serif", color: "#333" }}
+        className="bg-white p-10 rounded-lg shadow-lg max-w-4xl mx-auto"
+        style={{
+          fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+          color: "#2D3748",
+        }}
       >
-        {/* 🔹 ENCABEZADO */}
+        {/* Header */}
         <header
           style={{
-            backgroundColor: "#1E3A8A",
+            background: "linear-gradient(90deg, #000000ff 0%, #39713fff 100%)",
             color: "white",
             padding: "20px",
+            borderRadius: "8px 8px 0 0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "20px",
+            marginBottom: "30px",
           }}
         >
-          {/* Logo */}
           <div style={{ display: "flex", alignItems: "center" }}>
             <img
               src={logo}
               alt="Logo"
-              style={{ width: "70px", marginRight: "15px" }}
+              style={{ width: "80px", marginRight: "20px" }}
             />
-            <h1 style={{ margin: 0, fontSize: "22px" }}>COTIZACIÓN</h1>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "24px",
+                  fontWeight: "600",
+                }}
+              >
+                Cotización #{quotation.id_cotizacion}
+              </h1>
+              <p style={{ margin: 0, fontSize: "14px" }}>{quotation.estatus}</p>
+            </div>
           </div>
-
-          {/* Empresa y Redes */}
           <div style={{ textAlign: "right", fontSize: "12px" }}>
-            <p style={{ margin: 0 }}>{quotation.empresa?.nombre}</p>
-            <p style={{ margin: 0 }}>{quotation.empresa?.direccion}</p>
-            <p style={{ margin: 0 }}>
-              {quotation.empresa?.telefono} | {quotation.empresa?.email}
+            <p style={{ margin: "0", fontWeight: "500" }}>
+              Frenos y Servicios del Valle - Los Expertos
             </p>
-            <p style={{ margin: 0 }}>{quotation.empresa?.redes}</p>
+            <p style={{ margin: "4px 0" }}>
+              Cra. 16 No. 23-35 Av Pastrana, Valledupar, Colombia
+            </p>
+            <p style={{ margin: "4px 0" }}>
+              +57 3158868625 | frenosyserviciosdelvalle@hotmail.com
+            </p>
           </div>
         </header>
 
-        {/* 🔹 DATOS DEL CLIENTE */}
-        <section style={{ fontSize: "13px", marginBottom: "20px" }}>
-          <p>
-            <strong>Cliente:</strong> {quotation.cliente}
-          </p>
-          <p>
-            <strong>NIT/CC:</strong> {quotation.nit}
-          </p>
-          <p>
-            <strong>Teléfono:</strong> {quotation.telefono}
-          </p>
-          <p>
-            <strong>Email:</strong> {quotation.email}
-          </p>
-          <p>
-            <strong>Placa:</strong> {quotation.placa}
-          </p>
-          <p>
-            <strong>Vehículo:</strong> {quotation.vehiculo}
-          </p>
-          <p>
-            <strong>Modelo:</strong> {quotation.modelo}
-          </p>
-          <p>
-            <strong>Kilometraje:</strong> {quotation.kilometraje}
-          </p>
-          <p>
-            <strong>Fecha Vencimiento:</strong> {quotation.fechaVencimiento}
-          </p>
+        {/* Client Information */}
+        <section
+          style={{ fontSize: "14px", marginBottom: "30px", lineHeight: "1.6" }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "20px",
+            }}
+          >
+            <div>
+              <p>
+                <strong>Cliente:</strong> {quotation.nombre_cliente}
+              </p>
+              <p>
+                <strong>Placa del Vehiculo:</strong> {quotation.placa}
+              </p>
+              <p>
+                <strong>Vehiculo:</strong> {quotation.vehiculo}
+              </p>
+            </div>
+            <div>
+              <p>
+                <strong>Modelo:</strong> {quotation.modelo}
+              </p>
+              <p>
+                <strong>Kilometraje:</strong> {quotation.kilometraje}
+              </p>
+              <p>
+                <strong>Date:</strong>{" "}
+                {quotation.fecha
+                  ? new Date(quotation.fecha).toLocaleDateString("es-ES", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : ""}
+              </p>
+            </div>
+          </div>
         </section>
 
-        {/* 🔹 TABLA DE PRODUCTOS/SERVICIOS */}
+        {/* Products/Services Table */}
         <table
           style={{
             width: "100%",
             borderCollapse: "collapse",
             fontSize: "13px",
+            marginBottom: "30px",
           }}
         >
           <thead>
-            <tr style={{ backgroundColor: "#1E3A8A", color: "white" }}>
+            <tr style={{ backgroundColor: "#90EE90", color: "#2D3748" }}>
               <th style={thStyle}>Producto/Servicio</th>
               <th style={thStyle}>Cantidad</th>
               <th style={thStyle}>Precio Unitario</th>
@@ -129,106 +187,109 @@ const QuotationPDFView = () => {
           <tbody>
             {quotation.items?.length > 0 ? (
               quotation.items.map((item, idx) => (
-                <tr key={idx}>
+                <tr
+                  key={idx}
+                  style={{
+                    backgroundColor: idx % 2 === 0 ? "#F7FAFC" : "#FFFFFF",
+                  }}
+                >
                   <td style={tdStyle}>{item.descripcion}</td>
                   <td style={tdStyle}>{item.cantidad}</td>
-                  <td style={tdStyle}>${item.precio?.toFixed(2)}</td>
-                  <td style={tdStyle}>
-                    ${(item.cantidad * item.precio).toFixed(2)}
-                  </td>
+                  <td style={tdStyle}>${item.precio_unitario}</td>
+                  <td style={tdStyle}>${item.total}</td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td style={tdStyle} colSpan="4">
-                  No hay productos ni servicios
+                  No products or services listed
                 </td>
               </tr>
             )}
           </tbody>
         </table>
 
-        {/* 🔹 TOTALES */}
+        {/* Totals */}
         <div
-          style={{ textAlign: "right", marginTop: "20px", fontSize: "14px" }}
+          style={{ textAlign: "right", marginBottom: "30px", fontSize: "14px" }}
         >
           <p>
-            <strong>Subtotal:</strong> ${quotation.subtotal?.toFixed(2)}
+            <strong>Subtotal:</strong> ${quotation.subtotal}
           </p>
-          {quotation.discount > 0 && (
+          {quotation.descuento > 0 && (
             <p>
-              <strong>Descuento:</strong> -${quotation.discount?.toFixed(2)}
+              <strong>Descuento:</strong> -${quotation.descuento}
             </p>
           )}
-          <p style={{ fontSize: "16px", fontWeight: "bold" }}>
-            <strong>Total:</strong> ${quotation.total?.toFixed(2)}
+          <p style={{ fontSize: "16px", fontWeight: "600", color: "#1E3A8A" }}>
+            <strong>Total:</strong> ${quotation.total}
           </p>
         </div>
 
-        {/* 🔹 FIRMA */}
-        <div style={{ marginTop: "40px", fontSize: "13px" }}>
+        {/* Signature */}
+        <div style={{ marginBottom: "40px", fontSize: "13px" }}>
           <p>
-            <strong>Firma Cliente:</strong>
+            <strong>Firma del cliente:</strong>
           </p>
           <div
             style={{
-              borderTop: "1px solid #000",
-              width: "200px",
-              marginTop: "40px",
+              borderTop: "1px solid #2D3748",
+              width: "250px",
+              marginTop: "50px",
             }}
           ></div>
         </div>
 
-        {/* 🔹 FOOTER */}
+        {/* Footer */}
         <footer
           style={{
-            borderTop: "1px solid #ddd",
+            borderTop: "1px solid #E2E8F0",
             marginTop: "40px",
-            paddingTop: "10px",
+            paddingTop: "15px",
             textAlign: "center",
-            fontSize: "11px",
-            color: "#666",
+            fontSize: "12px",
+            color: "#4A5568",
           }}
         >
-          <p>
-            © {new Date().getFullYear()} {quotation.empresa?.nombre}. Todos los
+          <p style={{ margin: "0", fontWeight: "500" }}>
+            © {new Date().getFullYear()} Frenos y Servicios del Valle. Todos los
             derechos reservados.
           </p>
-          <p>
-            Desarrollado por <strong>Erik Moreno</strong> | Contacto:{" "}
-            <a href="mailto:tuemail@test.com">tuemail@test.com</a>
+          <p style={{ margin: "5px 0 0" }}>
+            Desarrollado por <strong>Erik Moreno</strong> | Contact:{" "}
+            <a
+              href="mailto:frenosyserviciosdelvalle@hotmail.com"
+              style={{ color: "#2B6CB0" }}
+            >
+              frenosyserviciosdelvalle@hotmail.com
+            </a>
           </p>
         </footer>
       </div>
 
-      {/* 🔹 BOTONES */}
-      <div className="text-center mt-6 no-print">
+      {/* Buttons */}
+      <div className="text-center mt-8 no-print">
         <button
           onClick={() => navigate(-1)}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          className="bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition mr-4"
         >
           Regresar
         </button>
         <button
           onClick={handleDownloadPDF}
-          className="ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition"
         >
           Descargar PDF
         </button>
-        <button
-          onClick={() => window.print()}
-          className="ml-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          Imprimir
-        </button>
       </div>
 
-      {/* 🔹 ESTILOS PRINT */}
+      {/* Print Styles */}
       <style>
         {`
           @media print {
-            body { background: white !important; }
+            body { background: white !important; margin: 0; }
             .no-print { display: none !important; }
+            .shadow-lg { box-shadow: none !important; }
           }
         `}
       </style>
@@ -237,15 +298,16 @@ const QuotationPDFView = () => {
 };
 
 const thStyle = {
-  border: "1px solid #ddd",
-  padding: "8px",
-  textAlign: "center",
+  border: "1px solid #E2E8F0",
+  padding: "12px",
+  textAlign: "left",
+  fontWeight: "600",
 };
 
 const tdStyle = {
-  border: "1px solid #ddd",
-  padding: "8px",
-  textAlign: "center",
+  border: "1px solid #E2E8F0",
+  padding: "12px",
+  textAlign: "left",
 };
 
 export default QuotationPDFView;

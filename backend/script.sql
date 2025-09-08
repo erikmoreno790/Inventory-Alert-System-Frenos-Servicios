@@ -6,23 +6,13 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.alertas
 (
     id_alerta serial NOT NULL,
-    id_product integer,
+    id_product integer NOT NULL,
     fecha_alerta timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    canal character varying(20) COLLATE pg_catalog."default",
-    enviado_a character varying(100) COLLATE pg_catalog."default",
-    estado character varying(20) COLLATE pg_catalog."default" DEFAULT 'pendiente'::character varying,
+    canal character varying(50) COLLATE pg_catalog."default",
+    enviado_a character varying(150) COLLATE pg_catalog."default",
+    estado character varying(20) COLLATE pg_catalog."default",
     mensaje text COLLATE pg_catalog."default",
     CONSTRAINT alertas_pkey PRIMARY KEY (id_alerta)
-);
-
-CREATE TABLE IF NOT EXISTS public.alertas_usuarios
-(
-    id serial NOT NULL,
-    alerta_id integer,
-    usuario_id integer,
-    canal character varying(20) COLLATE pg_catalog."default",
-    estado character varying(20) COLLATE pg_catalog."default" DEFAULT 'pendiente'::character varying,
-    CONSTRAINT alertas_usuarios_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.categorias
@@ -33,188 +23,163 @@ CREATE TABLE IF NOT EXISTS public.categorias
     CONSTRAINT categorias_nombre_key UNIQUE (nombre)
 );
 
+CREATE TABLE IF NOT EXISTS public.clientes
+(
+    id_cliente serial NOT NULL,
+    nombre character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    celular character varying(20) COLLATE pg_catalog."default",
+    email character varying(255) COLLATE pg_catalog."default",
+    CONSTRAINT clientes_pkey PRIMARY KEY (id_cliente)
+);
+
+CREATE TABLE IF NOT EXISTS public.cotizacion_items
+(
+    id_item serial NOT NULL,
+    id_cotizacion integer NOT NULL,
+    cantidad integer NOT NULL,
+    descripcion text COLLATE pg_catalog."default" NOT NULL,
+    precio_unitario numeric(12, 2) NOT NULL,
+    total numeric(12, 2) NOT NULL,
+    CONSTRAINT cotizacion_items_pkey PRIMARY KEY (id_item)
+);
+
+CREATE TABLE IF NOT EXISTS public.cotizaciones
+(
+    id_cotizacion serial NOT NULL,
+    id_cliente integer NOT NULL,
+    id_vehiculo integer NOT NULL,
+    tecnico character varying(255) COLLATE pg_catalog."default",
+    kilometraje integer,
+    fecha date NOT NULL DEFAULT CURRENT_DATE,
+    observaciones text COLLATE pg_catalog."default",
+    estatus character varying(20) COLLATE pg_catalog."default" DEFAULT 'pendiente'::character varying,
+    descuento numeric(12, 2) DEFAULT 0,
+    subtotal numeric(12, 2) NOT NULL,
+    total numeric(12, 2) NOT NULL,
+    CONSTRAINT cotizaciones_pkey PRIMARY KEY (id_cotizacion)
+);
+
 CREATE TABLE IF NOT EXISTS public.movimientos_stock
 (
     id_movimiento serial NOT NULL,
-    id_product integer,
-    tipo character varying(20) COLLATE pg_catalog."default",
+    id_product integer NOT NULL,
     cantidad integer NOT NULL,
+    tipo character varying(20) COLLATE pg_catalog."default" NOT NULL,
     fecha timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     id_usuario integer,
     observaciones text COLLATE pg_catalog."default",
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT movimientos_stock_pkey PRIMARY KEY (id_movimiento)
 );
 
 CREATE TABLE IF NOT EXISTS public.proveedores
 (
     id_proveedor serial NOT NULL,
-    nombre character varying(100) COLLATE pg_catalog."default" NOT NULL,
-    contacto character varying(100) COLLATE pg_catalog."default",
+    nit integer NOT NULL,
+    nombre character varying(150) COLLATE pg_catalog."default" NOT NULL,
     telefono character varying(20) COLLATE pg_catalog."default",
     email character varying(100) COLLATE pg_catalog."default",
-    CONSTRAINT proveedores_pkey PRIMARY KEY (id_proveedor)
-);
-
-CREATE TABLE IF NOT EXISTS public.quotation_items
-(
-    id_quotation_item serial NOT NULL,
-    id_quotation integer NOT NULL,
-    id_product integer NOT NULL,
-    cantidad integer NOT NULL,
-    precio numeric(12, 2) NOT NULL,
-    CONSTRAINT quotation_items_pkey PRIMARY KEY (id_quotation_item)
-);
-
-CREATE TABLE IF NOT EXISTS public.quotations
-(
-    id_quotation serial NOT NULL,
-    cliente character varying(100) COLLATE pg_catalog."default" NOT NULL,
-    nit character varying(20) COLLATE pg_catalog."default",
-    telefono character varying(20) COLLATE pg_catalog."default",
-    email character varying(100) COLLATE pg_catalog."default",
-    placa character varying(10) COLLATE pg_catalog."default",
-    vehiculo character varying(100) COLLATE pg_catalog."default",
-    modelo character varying(50) COLLATE pg_catalog."default",
-    fecha_cotizacion date DEFAULT CURRENT_DATE,
-    estado character varying(20) COLLATE pg_catalog."default" DEFAULT 'pending'::character varying,
-    total numeric(12, 2) DEFAULT 0,
-    kilometraje integer,
-    subtotal numeric(12, 2),
-    discount numeric(12, 2),
-    CONSTRAINT quotations_pkey PRIMARY KEY (id_quotation)
+    direccion text COLLATE pg_catalog."default",
+    CONSTRAINT proveedores_pkey PRIMARY KEY (id_proveedor),
+    CONSTRAINT proveedores_nombre_key UNIQUE (nombre)
 );
 
 CREATE TABLE IF NOT EXISTS public.repuestos
 (
-    id_product integer NOT NULL DEFAULT nextval('repuestos_id_repuesto_seq'::regclass),
-    nombre character varying(100) COLLATE pg_catalog."default" NOT NULL,
+    id_product integer NOT NULL DEFAULT nextval('products_id_product_seq'::regclass),
+    nombre character varying(150) COLLATE pg_catalog."default" NOT NULL,
     descripcion text COLLATE pg_catalog."default",
+    stock_actual integer NOT NULL DEFAULT 0,
+    stock_minimo integer NOT NULL DEFAULT 0,
     id_categoria integer,
     id_proveedor integer,
-    stock_actual integer DEFAULT 0,
-    stock_minimo integer DEFAULT 0,
-    precio_costo double precision DEFAULT 0,
-    ubicacion character varying(100) COLLATE pg_catalog."default",
-    codigo_interno character varying(50) COLLATE pg_catalog."default",
-    fecha_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT repuestos_pkey PRIMARY KEY (id_product),
-    CONSTRAINT repuestos_codigo_interno_key UNIQUE (codigo_interno)
-);
-
-CREATE TABLE IF NOT EXISTS public.service_orders
-(
-    id_service_order integer NOT NULL DEFAULT nextval('service_orders_id_seq'::regclass),
-    placa character varying(10) COLLATE pg_catalog."default" NOT NULL,
-    vehiculo character varying(100) COLLATE pg_catalog."default" NOT NULL,
-    modelo character varying(50) COLLATE pg_catalog."default",
-    cliente character varying(100) COLLATE pg_catalog."default" NOT NULL,
-    nit character varying(20) COLLATE pg_catalog."default",
-    telefono character varying(20) COLLATE pg_catalog."default",
-    email character varying(100) COLLATE pg_catalog."default",
-    kilometraje integer,
-    fecha_servicio date NOT NULL,
-    mecanicos text COLLATE pg_catalog."default",
-    fotos text[] COLLATE pg_catalog."default",
-    CONSTRAINT service_orders_pkey PRIMARY KEY (id_service_order)
-);
-
-CREATE TABLE IF NOT EXISTS public.used_parts
-(
-    id_used_parts serial NOT NULL,
-    id_service_order integer NOT NULL,
-    id_product integer NOT NULL,
-    cantidad integer NOT NULL,
-    observacion text COLLATE pg_catalog."default",
-    CONSTRAINT used_parts_pkey PRIMARY KEY (id_used_parts)
+    CONSTRAINT products_pkey PRIMARY KEY (id_product)
 );
 
 CREATE TABLE IF NOT EXISTS public.usuarios
 (
     id_usuario serial NOT NULL,
     nombre character varying(100) COLLATE pg_catalog."default" NOT NULL,
-    email character varying(100) COLLATE pg_catalog."default",
-    password_hash character varying(255) COLLATE pg_catalog."default" NOT NULL,
+    email character varying(100) COLLATE pg_catalog."default" NOT NULL,
     telefono character varying(20) COLLATE pg_catalog."default",
-    rol character varying(20) COLLATE pg_catalog."default",
-    whatsapp_opt_in boolean DEFAULT true,
-    email_opt_in boolean DEFAULT true,
+    password_hash text COLLATE pg_catalog."default" NOT NULL,
+    rol character varying(50) COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario)
+    CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario),
+    CONSTRAINT usuarios_email_key UNIQUE (email)
+);
+
+CREATE TABLE IF NOT EXISTS public.vehiculos
+(
+    id_vehiculo serial NOT NULL,
+    id_cliente integer NOT NULL,
+    placa character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    marca character varying(100) COLLATE pg_catalog."default",
+    modelo character varying(100) COLLATE pg_catalog."default",
+    "año" integer,
+    CONSTRAINT vehiculos_pkey PRIMARY KEY (id_vehiculo),
+    CONSTRAINT vehiculos_placa_key UNIQUE (placa)
 );
 
 ALTER TABLE IF EXISTS public.alertas
-    ADD CONSTRAINT alertas_repuesto_id_fkey FOREIGN KEY (id_product)
+    ADD CONSTRAINT alertas_id_product_fkey FOREIGN KEY (id_product)
     REFERENCES public.repuestos (id_product) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.alertas_usuarios
-    ADD CONSTRAINT alertas_usuarios_alerta_id_fkey FOREIGN KEY (alerta_id)
-    REFERENCES public.alertas (id_alerta) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.alertas_usuarios
-    ADD CONSTRAINT alertas_usuarios_usuario_id_fkey FOREIGN KEY (usuario_id)
-    REFERENCES public.usuarios (id_usuario) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.movimientos_stock
-    ADD CONSTRAINT movimientos_stock_repuesto_id_fkey FOREIGN KEY (id_product)
-    REFERENCES public.repuestos (id_product) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.movimientos_stock
-    ADD CONSTRAINT movimientos_stock_usuario_id_fkey FOREIGN KEY (id_usuario)
-    REFERENCES public.usuarios (id_usuario) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.quotation_items
-    ADD CONSTRAINT quotation_items_id_product_fkey FOREIGN KEY (id_product)
-    REFERENCES public.repuestos (id_product) MATCH SIMPLE
-    ON UPDATE NO ACTION
-    ON DELETE NO ACTION;
-
-
-ALTER TABLE IF EXISTS public.quotation_items
-    ADD CONSTRAINT quotation_items_id_quotation_fkey FOREIGN KEY (id_quotation)
-    REFERENCES public.quotations (id_quotation) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE;
 
 
-ALTER TABLE IF EXISTS public.repuestos
-    ADD CONSTRAINT repuestos_categoria_id_fkey FOREIGN KEY (id_categoria)
-    REFERENCES public.categorias (id_categoria) MATCH SIMPLE
+ALTER TABLE IF EXISTS public.cotizacion_items
+    ADD CONSTRAINT cotizacion_items_id_cotizacion_fkey FOREIGN KEY (id_cotizacion)
+    REFERENCES public.cotizaciones (id_cotizacion) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE;
+
+
+ALTER TABLE IF EXISTS public.cotizaciones
+    ADD CONSTRAINT cotizaciones_id_cliente_fkey FOREIGN KEY (id_cliente)
+    REFERENCES public.clientes (id_cliente) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
 
 
-ALTER TABLE IF EXISTS public.repuestos
-    ADD CONSTRAINT repuestos_proveedor_id_fkey FOREIGN KEY (id_proveedor)
-    REFERENCES public.proveedores (id_proveedor) MATCH SIMPLE
+ALTER TABLE IF EXISTS public.cotizaciones
+    ADD CONSTRAINT cotizaciones_id_vehiculo_fkey FOREIGN KEY (id_vehiculo)
+    REFERENCES public.vehiculos (id_vehiculo) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE NO ACTION;
 
 
-ALTER TABLE IF EXISTS public.used_parts
-    ADD CONSTRAINT used_parts_id_product_fkey FOREIGN KEY (id_product)
+ALTER TABLE IF EXISTS public.movimientos_stock
+    ADD CONSTRAINT movimientos_stock_id_product_fkey FOREIGN KEY (id_product)
     REFERENCES public.repuestos (id_product) MATCH SIMPLE
     ON UPDATE NO ACTION
-    ON DELETE RESTRICT;
+    ON DELETE CASCADE;
 
 
-ALTER TABLE IF EXISTS public.used_parts
-    ADD CONSTRAINT used_parts_id_service_order_fkey FOREIGN KEY (id_service_order)
-    REFERENCES public.service_orders (id_service_order) MATCH SIMPLE
+ALTER TABLE IF EXISTS public.movimientos_stock
+    ADD CONSTRAINT movimientos_stock_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES public.usuarios (id_usuario) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL
+
+
+ALTER TABLE IF EXISTS public.repuestos
+    ADD CONSTRAINT products_id_categoria_fkey FOREIGN KEY (id_categoria)
+    REFERENCES public.categorias (id_categoria) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL;
+
+
+ALTER TABLE IF EXISTS public.repuestos
+    ADD CONSTRAINT products_id_proveedor_fkey FOREIGN KEY (id_proveedor)
+    REFERENCES public.proveedores (id_proveedor) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL;
+
+
+ALTER TABLE IF EXISTS public.vehiculos
+    ADD CONSTRAINT vehiculos_id_cliente_fkey FOREIGN KEY (id_cliente)
+    REFERENCES public.clientes (id_cliente) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE;
 

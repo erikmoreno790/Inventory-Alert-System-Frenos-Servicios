@@ -1,5 +1,4 @@
 const productModel = require('../models/productModel');
-const { sendLowStockAlert } = require('../utils/emailService');
 
 // Crear un nuevo repuesto
 exports.createRepuesto = async (req, res) => {
@@ -144,7 +143,7 @@ exports.updateStock = async (req, res) => {
         // Opcional: enviar alerta si el stock es bajo
         if (stock < 5) {
             const repuesto = await productModel.getRepuestoById(id);
-            await sendLowStockAlert(repuesto);
+
         }
         res.json({ message: 'Stock actualizado correctamente' });
     } catch (error) {

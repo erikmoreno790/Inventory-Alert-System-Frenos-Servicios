@@ -9,9 +9,9 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const alertRoutes = require('./routes/alertRoutes');
-//const quotationRoutes = require('./routes/quotationRoutes');
-const quotationTempRoutes = require('./routes/quotationTempRoutes');
-const quotationItemRoutes = require('./routes/quotationItemRoutes');
+const cotizacionRoutes = require('./routes/cotizacionRoutes');
+const cotizacionItemRoutes = require('./routes/cotizacionItemRoutes');
+
 
 const app = express();
 
@@ -23,9 +23,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/alerts', alertRoutes);
-//app.use('/api/quotations', quotationRoutes);
-app.use('/api/quotations-temp', quotationTempRoutes);
-app.use('/api/quotations-items', quotationItemRoutes);
+app.use('/api/cotizaciones', cotizacionRoutes);
+app.use('/api/cotizacion-items', cotizacionItemRoutes);
 
 
 app.listen(PORT, HOST, () => {

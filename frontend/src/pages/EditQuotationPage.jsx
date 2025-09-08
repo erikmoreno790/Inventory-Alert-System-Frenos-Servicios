@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
-import api from "../api"; // Cliente API ya configurado
+import api from "../api";
 
-const NuevaCotizacionPage = () => {
+const EditarCotizacionPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // id de la cotización a editar
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
   const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -24,6 +26,27 @@ const NuevaCotizacionPage = () => {
     porcentaje_descuento: 0,
     items: [{ descripcion: "", cantidad: 1, precio_unitario: 0, sub_total: 0 }],
   });
+
+  // 🔹 Traer cotización existente
+  useEffect(() => {
+    const fetchCotizacion = async () => {
+      try {
+        const { data } = await api.get(`/cotizaciones/${id}`, config);
+        const items = data.items.map((item) => ({
+          ...item,
+          sub_total: item.cantidad * item.precio_unitario,
+        }));
+        setCotizacion({ ...data, items });
+      } catch (err) {
+        console.error(err);
+        alert("Error cargando la cotización");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCotizacion();
+  }, [id]);
 
   // 🔹 Calcular totales
   const calcularTotales = () => {
@@ -55,7 +78,6 @@ const NuevaCotizacionPage = () => {
     setCotizacion({ ...cotizacion, items: newItems });
   };
 
-  // 🔹 Agregar ítem
   const addItem = () => {
     setCotizacion({
       ...cotizacion,
@@ -66,7 +88,6 @@ const NuevaCotizacionPage = () => {
     });
   };
 
-  // 🔹 Eliminar ítem
   const removeItem = (index) => {
     setCotizacion({
       ...cotizacion,
@@ -74,7 +95,7 @@ const NuevaCotizacionPage = () => {
     });
   };
 
-  // 🔹 Guardar cotización
+  // 🔹 Guardar cambios
   const handleSubmit = async () => {
     if (!cotizacion.nombre_cliente.trim() || !cotizacion.placa.trim()) {
       alert("El nombre del cliente y la placa son obligatorios.");
@@ -82,18 +103,26 @@ const NuevaCotizacionPage = () => {
     }
 
     try {
-      await api.post(
-        "/cotizaciones",
+      await api.put(
+        `/cotizaciones/${id}`,
         { ...cotizacion, items, subtotal, descuento, total },
         config
       );
-      alert("¡Cotización creada exitosamente!");
+      alert("¡Cotización actualizada exitosamente!");
       navigate("/historial-cotizaciones");
     } catch (error) {
       console.error(error);
-      alert("Error al guardar la cotización.");
+      alert("Error al actualizar la cotización.");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-lg text-gray-500">Cargando cotización...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -107,7 +136,7 @@ const NuevaCotizacionPage = () => {
         <main>
           <div className="p-6 max-w-4xl mx-auto">
             <div className="flex justify-between items-center border-b pb-4 mb-6">
-              <h2 className="text-3xl font-bold">Nueva Cotización</h2>
+              <h2 className="text-3xl font-bold">Editar Cotización</h2>
               <button
                 onClick={() => navigate(-1)}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -116,7 +145,7 @@ const NuevaCotizacionPage = () => {
               </button>
             </div>
 
-            {/* Datos Generales */}
+            {/* Datos generales */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <input
                 name="nombre_cliente"
@@ -306,7 +335,7 @@ const NuevaCotizacionPage = () => {
                 onClick={handleSubmit}
                 className="bg-indigo-600 text-white px-4 py-2 rounded"
               >
-                Guardar Cotización
+                Guardar Cambios
               </button>
             </div>
           </div>
@@ -316,4 +345,4 @@ const NuevaCotizacionPage = () => {
   );
 };
 
-export default NuevaCotizacionPage;
+export default EditarCotizacionPage;

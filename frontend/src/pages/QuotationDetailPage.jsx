@@ -1,229 +1,240 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer, Edit, Trash2, CheckCircle } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import api from "../api";
 
-const QuotationDetailPage = () => {
-  const { id } = useParams(); // ID de la cotización desde la URL
+const QuotationDetailsPage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [quotation, setQuotation] = useState(null); // Estado para la cotización
+  const [quotation, setQuotation] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Función para abrir/cerrar Sidebar
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  // 🔹 Obtener detalles de la cotización
+  const fetchQuotation = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const { data } = await api.get(`/cotizaciones/${id}`, config);
+      console.log("Detalles de la cotización:", data);
+      setQuotation(data);
+    } catch (err) {
+      console.error(err);
+      alert("Error cargando detalles de la cotización");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Cargar detalles de la cotización
   useEffect(() => {
-    const fetchQuotationDetail = async () => {
-      try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await api.get(`/quotations/${id}`, config);
-        setQuotation(res.data);
-      } catch (error) {
-        console.error(
-          "Error cargando la cotización:",
-          error.response?.data || error.message
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchQuotation();
+  }, [id]);
 
-    fetchQuotationDetail();
-  }, [id, token]);
-
-  // Función para aprobar cotización
-  const handleApprove = async () => {
+  const handleStatusChange = async (newStatus) => {
     try {
+      const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await api.put(`/quotations/${id}/approve`, {}, config);
-      alert("Cotización aprobada");
-      navigate("/cotizaciones");
-    } catch (error) {
-      console.error("Error al aprobar:", error);
+      await api.put(
+        `/cotizaciones/${id}`,
+        { ...quotation, estatus: newStatus },
+        config
+      );
+      setQuotation({ ...quotation, estatus: newStatus });
+      alert(`Cotización ${newStatus.toLowerCase()} con éxito`);
+    } catch (err) {
+      console.error(err);
+      alert("Error actualizando el estado de la cotización");
     }
-  };
-
-  // Función para eliminar cotización
-  const handleDelete = async () => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta cotización?")) return;
-
-    try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await api.delete(`/quotations/${id}`, config);
-      alert("Cotización eliminada");
-      navigate("/cotizaciones");
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-    }
-  };
-
-  // Función para imprimir (redirigir a QuotationPDFView con datos)
-  const handlePrint = () => {
-    // Guardamos en localStorage por si el usuario recarga la página de impresión
-    localStorage.setItem("currentQuotation", JSON.stringify(quotation));
-
-    // Navegamos a la vista de impresión con la cotización en state
-    navigate(`/cotizacion/pdf/${id}`, { state: quotation });
   };
 
   if (loading) {
-    return <div className="p-6 text-gray-600">Cargando cotización...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-lg text-gray-500">Cargando detalles...</p>
+      </div>
+    );
   }
 
   if (!quotation) {
-    return <div className="p-6 text-red-500">Cotización no encontrada.</div>;
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-lg text-red-500">No se encontró la cotización.</p>
+      </div>
+    );
   }
+
+  // 🔹 Función para formatear moneda
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 2,
+    }).format(value || 0);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
       <div
         className={`flex-1 ${
           sidebarOpen ? "ml-64" : ""
         } transition-all duration-300`}
       >
-        {/* Navbar */}
         <TopNavbar onToggleSidebar={toggleSidebar} />
-
-        <main>
-          <div className="p-6">
-            {/* Botón volver */}
-            <Link
-              to="/cotizaciones"
-              className="text-blue-600 hover:underline flex items-center mb-4"
-            >
-              <ArrowLeft className="mr-2" size={16} /> Volver a Cotizaciones
-            </Link>
-
-            {/* Encabezado */}
-            <h1 className="text-2xl font-bold mb-2">
-              Cotización #{quotation.id_quotation}
+        <main className="p-6 max-w-5xl mx-auto">
+          {/* 🔹 Encabezado */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">
+              Cotización #{quotation.id_cotizacion}
             </h1>
-            <p className="text-gray-600 mb-4">
-              Estado:{" "}
-              <span
-                className={`px-2 py-1 rounded ${
-                  quotation.estado === "approved"
-                    ? "bg-green-100 text-green-700"
-                    : quotation.estado === "rejected"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  navigate(`/cotizacion/pdf/${quotation.id_cotizacion}`)
+                }
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
               >
-                {quotation.estado}
-              </span>
-            </p>
+                Imprimir
+              </button>
+              {quotation.estatus !== "Aprobada" && (
+                <button
+                  onClick={() => handleStatusChange("Aprobada")}
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                >
+                  Aprobar
+                </button>
+              )}
+              {quotation.estatus !== "Rechazada" && (
+                <button
+                  onClick={() => handleStatusChange("Rechazada")}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                >
+                  Rechazar
+                </button>
+              )}
 
-            {/* Información general */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-lg shadow mb-6">
-              <p>
-                <strong>Cliente:</strong> {quotation.cliente}
-              </p>
-              <p>
-                <strong>NIT:</strong> {quotation.nit || "N/A"}
-              </p>
-              <p>
-                <strong>Teléfono:</strong> {quotation.telefono || "N/A"}
-              </p>
-              <p>
-                <strong>Email:</strong> {quotation.email || "N/A"}
-              </p>
-              <p>
-                <strong>Placa:</strong> {quotation.placa}
-              </p>
-              <p>
-                <strong>Vehículo:</strong> {quotation.vehiculo}
-              </p>
-              <p>
-                <strong>Modelo:</strong> {quotation.modelo}
-              </p>
-              <p>
-                <strong>Kilometraje:</strong> {quotation.kilometraje} km
-              </p>
-              <p>
-                <strong>Fecha:</strong>{" "}
-                {new Date(quotation.fecha_cotizacion).toLocaleDateString()}
-              </p>
+              <button
+                onClick={() =>
+                  navigate(`/cotizaciones/editar/${quotation.id_cotizacion}`)
+                }
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
+              >
+                Editar / Modificar
+              </button>
+              <button
+                onClick={() => navigate("/historial-cotizaciones")}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+              >
+                Regresar
+              </button>
             </div>
+          </div>
 
-            {/* Tabla de Items */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
+          {/* 🔹 Sección de datos principales */}
+          <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h2 className="text-lg font-semibold mb-2">
+                  Datos del Cliente
+                </h2>
+                <p>
+                  <strong>Nombre:</strong> {quotation.nombre_cliente}
+                </p>
+                <p>
+                  <strong>Vehículo:</strong> {quotation.vehiculo}
+                </p>
+                <p>
+                  <strong>Kilometraje:</strong> {quotation.kilometraje || "N/A"}
+                </p>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold mb-2">
+                  Detalles de Cotización
+                </h2>
+                <p>
+                  <strong>Mecánico:</strong>{" "}
+                  {quotation.nombre_mecanico || "N/A"}
+                </p>
+                <p>
+                  <strong>Fecha:</strong>{" "}
+                  {quotation.fecha
+                    ? new Date(quotation.fecha).toLocaleDateString()
+                    : ""}
+                </p>
+                <p>
+                  <strong>Estatus:</strong> {quotation.estatus}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 🔹 Observaciones */}
+          {quotation.observaciones && (
+            <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
+              <h2 className="text-lg font-semibold mb-2">Observaciones</h2>
+              <p className="text-gray-700">{quotation.observaciones}</p>
+            </div>
+          )}
+
+          {/* 🔹 Tabla de ítems */}
+          {quotation.items && quotation.items.length > 0 && (
+            <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
               <h2 className="text-lg font-semibold mb-4">
-                Productos Cotizados
+                Productos / Servicios
               </h2>
-              <table className="min-w-full border border-gray-200">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2">Producto</th>
-                    <th className="border p-2">Cantidad</th>
-                    <th className="border p-2">Precio</th>
-                    <th className="border p-2">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotation.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{item.nombre}</td>
-                      <td className="border p-2">{item.quantity}</td>
-                      <td className="border p-2">${item.price}</td>
-                      <td className="border p-2">
-                        ${item.price * item.quantity}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full border border-gray-300">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border p-2 text-left">Producto</th>
+                      <th className="border p-2 text-center">Cantidad</th>
+                      <th className="border p-2 text-right">Precio Unitario</th>
+                      <th className="border p-2 text-right">Subtotal</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {quotation.items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border p-2">{item.descripcion}</td>
+                        <td className="border p-2 text-center">
+                          {item.cantidad}
+                        </td>
+                        <td className="border p-2 text-right">
+                          {formatCurrency(item.precio_unitario)}
+                        </td>
+                        <td className="border p-2 text-right font-semibold">
+                          {formatCurrency(item.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          )}
 
-            {/* Totales */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6">
-              <p>
-                <strong>Subtotal:</strong> ${quotation.subtotal}
-              </p>
-              <p>
-                <strong>Descuento:</strong> ${quotation.discount}
-              </p>
-              <p>
-                <strong>Total:</strong> ${quotation.total}
-              </p>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={handleApprove}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                <CheckCircle className="mr-2" size={18} /> Aprobar
-              </button>
-              <button
-                onClick={handlePrint}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                <Printer className="mr-2" size={18} /> Imprimir
-              </button>
-              <Link
-                to={`/cotizaciones/editar/${quotation.id_quotation}`}
-                className="bg-yellow-500 text-white px-4 py-2 rounded"
-              >
-                Editar
-              </Link>
-              <button
-                onClick={handleDelete}
-                className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                <Trash2 className="mr-2" size={18} /> Eliminar
-              </button>
+          {/* 🔹 Totales */}
+          <div className="bg-white shadow-lg rounded-2xl p-6">
+            <div className="flex justify-end">
+              <div className="w-full md:w-1/3">
+                <div className="flex justify-between py-1">
+                  <span className="font-medium">Subtotal:</span>
+                  <span>{formatCurrency(quotation.subtotal)}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="font-medium">Descuento:</span>
+                  <span>{formatCurrency(quotation.descuento)}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="font-medium">Total:</span>
+                  <span className="text-xl font-bold">
+                    {formatCurrency(quotation.total)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </main>
@@ -232,4 +243,4 @@ const QuotationDetailPage = () => {
   );
 };
 
-export default QuotationDetailPage;
+export default QuotationDetailsPage;

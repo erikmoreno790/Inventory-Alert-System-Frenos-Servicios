@@ -12,9 +12,8 @@ import QuotationPage from "./pages/QuotationPage";
 import QuotationPDFView from "./pages/QuotationPDFView";
 import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
 import QuotationDetailPage from "./pages/QuotationDetailPage";
+import EditQuotationPage from "./pages/EditQuotationPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
-import QuotationTempPage from "./pages/QuotationTempPage";
-import QuotationDetailTempPage from "./pages/QuotationDetailTempPage";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -104,7 +103,7 @@ function App() {
           path="/cotizaciones/editar/:id"
           element={
             <PrivateRoute>
-              <QuotationPage />
+              <EditQuotationPage />
             </PrivateRoute>
           }
         />
@@ -129,22 +128,6 @@ function App() {
           element={
             <PrivateRoute>
               <QuotationsHistoryPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/cotizacion-temporal"
-          element={
-            <PrivateRoute>
-              <QuotationTempPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/cotizacion-temporal/:id"
-          element={
-            <PrivateRoute>
-              <QuotationDetailPage />
             </PrivateRoute>
           }
         />
