@@ -14,6 +14,8 @@ const NuevaCotizacionPage = () => {
   const [cotizacion, setCotizacion] = useState({
     fecha: new Date().toISOString().split("T")[0],
     nombre_cliente: "",
+    nit_cc: "",
+    telefono: "",
     vehiculo: "",
     modelo: "",
     placa: "",
@@ -24,6 +26,8 @@ const NuevaCotizacionPage = () => {
     porcentaje_descuento: 0,
     items: [{ descripcion: "", cantidad: 1, precio_unitario: 0, sub_total: 0 }],
   });
+
+  const [imagenes, setImagenes] = useState([]); // Estado para imágenes seleccionadas
 
   // 🔹 Calcular totales
   const calcularTotales = () => {
@@ -74,6 +78,16 @@ const NuevaCotizacionPage = () => {
     });
   };
 
+  // 🔹 Manejar selección de imágenes
+  const handleImageChange = (e) => {
+    setImagenes([...imagenes, ...Array.from(e.target.files)]);
+  };
+
+  // 🔹 Eliminar imagen seleccionada
+  const removeImage = (index) => {
+    setImagenes(imagenes.filter((_, i) => i !== index));
+  };
+
   // 🔹 Guardar cotización
   const handleSubmit = async () => {
     if (!cotizacion.nombre_cliente.trim() || !cotizacion.placa.trim()) {
@@ -82,11 +96,46 @@ const NuevaCotizacionPage = () => {
     }
 
     try {
-      await api.post(
-        "/cotizaciones",
-        { ...cotizacion, items, subtotal, descuento, total },
-        config
+      const formData = new FormData();
+      formData.append("fecha", cotizacion.fecha);
+      formData.append("nombre_cliente", cotizacion.nombre_cliente);
+      formData.append("nit_cc", cotizacion.nit_cc);
+      formData.append("telefono", cotizacion.telefono);
+      formData.append("vehiculo", cotizacion.vehiculo);
+      formData.append("modelo", cotizacion.modelo);
+      formData.append("placa", cotizacion.placa);
+      formData.append("kilometraje", cotizacion.kilometraje);
+      formData.append("nombre_mecanico", cotizacion.nombre_mecanico);
+      formData.append("observaciones", cotizacion.observaciones);
+      formData.append("estatus", cotizacion.estatus);
+      formData.append(
+        "porcentaje_descuento",
+        cotizacion.porcentaje_descuento || 0
       );
+      formData.append("subtotal", subtotal);
+      formData.append("descuento", descuento);
+      formData.append("total", total);
+
+      // Agregar ítems como JSON
+      formData.append("items", JSON.stringify(items));
+
+      // Agregar imágenes
+      imagenes.forEach((img) => {
+        formData.append("imagenes", img);
+      });
+
+      // Verificar los datos enviados
+
+      console.log(cotizacion.items)
+
+
+      await api.post("/cotizaciones", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       alert("¡Cotización creada exitosamente!");
       navigate("/historial-cotizaciones");
     } catch (error) {
@@ -99,9 +148,7 @@ const NuevaCotizacionPage = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div
-        className={`flex-1 ${
-          sidebarOpen ? "ml-64" : ""
-        } transition-all duration-300`}
+        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main>
@@ -118,48 +165,15 @@ const NuevaCotizacionPage = () => {
 
             {/* Datos Generales */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <input
-                name="nombre_cliente"
-                value={cotizacion.nombre_cliente}
-                onChange={handleChange}
-                placeholder="Nombre del cliente *"
-                className="border p-2"
-              />
-              <input
-                name="placa"
-                value={cotizacion.placa}
-                onChange={handleChange}
-                placeholder="Placa del vehículo *"
-                className="border p-2"
-              />
-              <input
-                name="vehiculo"
-                value={cotizacion.vehiculo}
-                onChange={handleChange}
-                placeholder="Vehículo"
-                className="border p-2"
-              />
-              <input
-                name="modelo"
-                value={cotizacion.modelo}
-                onChange={handleChange}
-                placeholder="Modelo"
-                className="border p-2"
-              />
-              <input
-                name="kilometraje"
-                value={cotizacion.kilometraje}
-                onChange={handleChange}
-                placeholder="Kilometraje"
-                className="border p-2"
-              />
-              <input
-                name="nombre_mecanico"
-                value={cotizacion.nombre_mecanico}
-                onChange={handleChange}
-                placeholder="Mecánico"
-                className="border p-2"
-              />
+              <input type="date" name="fecha" value={cotizacion.fecha} onChange={handleChange} className="border p-2" />
+              <input name="nombre_cliente" value={cotizacion.nombre_cliente} onChange={handleChange} placeholder="Nombre del cliente *" className="border p-2" />
+              <input name="nit_cc" value={cotizacion.nit_cc} onChange={handleChange} placeholder="NIT/CC" className="border p-2" />
+              <input name="telefono" value={cotizacion.telefono} onChange={handleChange} placeholder="Teléfono" className="border p-2" />
+              <input name="placa" value={cotizacion.placa} onChange={handleChange} placeholder="Placa del vehículo *" className="border p-2" />
+              <input name="vehiculo" value={cotizacion.vehiculo} onChange={handleChange} placeholder="Vehículo" className="border p-2" />
+              <input name="modelo" value={cotizacion.modelo} onChange={handleChange} placeholder="Modelo" className="border p-2" />
+              <input name="kilometraje" value={cotizacion.kilometraje} onChange={handleChange} placeholder="Kilometraje" className="border p-2" />
+              <input name="nombre_mecanico" value={cotizacion.nombre_mecanico} onChange={handleChange} placeholder="Mecánico" className="border p-2" />
             </div>
 
             <textarea
@@ -170,6 +184,72 @@ const NuevaCotizacionPage = () => {
               className="border p-2 w-full mb-6"
               rows={3}
             />
+
+           {/* Subir imágenes */}
+<div className="mb-6">
+  <label className="block mb-3 text-lg font-semibold text-gray-800">
+    Adjuntar fotos (máx. 5)
+  </label>
+
+  {/* Input con estilo */}
+  <div className="flex items-center justify-center w-full">
+    <label
+      htmlFor="file-upload"
+      className="flex flex-col items-center justify-center w-full max-w-md border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+    >
+      <div className="flex flex-col items-center justify-center py-6">
+        <svg
+          className="w-12 h-12 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+          />
+        </svg>
+        <p className="mt-2 text-sm text-gray-600">Haz clic o arrastra imágenes aquí</p>
+      </div>
+      <input
+        id="file-upload"
+        type="file"
+        multiple
+        accept="image/*"
+        capture="environment"
+        onChange={handleImageChange}
+        className="hidden"
+      />
+    </label>
+  </div>
+
+  {/* Previsualización de imágenes */}
+  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+    {imagenes.map((img, idx) => (
+      <div
+        key={idx}
+        className="relative rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+      >
+        <img
+          src={URL.createObjectURL(img)}
+          alt={`preview-${idx}`}
+          className="w-full h-32 object-cover"
+        />
+        <button
+          type="button"
+          onClick={() => removeImage(idx)}
+          className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg transition"
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
+
 
             {/* Items */}
             <div className="flex gap-2 mb-4">
@@ -209,11 +289,7 @@ const NuevaCotizacionPage = () => {
                         type="number"
                         value={item.cantidad}
                         onChange={(e) =>
-                          handleItemChange(
-                            idx,
-                            "cantidad",
-                            parseFloat(e.target.value) || 0
-                          )
+                          handleItemChange(idx, "cantidad", e.target.value)
                         }
                         className="border p-1 w-16"
                       />
@@ -223,11 +299,7 @@ const NuevaCotizacionPage = () => {
                         type="number"
                         value={item.precio_unitario}
                         onChange={(e) =>
-                          handleItemChange(
-                            idx,
-                            "precio_unitario",
-                            parseFloat(e.target.value) || 0
-                          )
+                          handleItemChange(idx, "precio_unitario", e.target.value)
                         }
                         className="border p-1 w-24"
                       />
@@ -254,9 +326,7 @@ const NuevaCotizacionPage = () => {
 
             {/* Descuento */}
             <div className="mb-4 flex items-center gap-4">
-              <label className="font-medium text-gray-700">
-                Descuento (%):
-              </label>
+              <label className="font-medium text-gray-700">Descuento (%):</label>
               <input
                 type="number"
                 min="0"

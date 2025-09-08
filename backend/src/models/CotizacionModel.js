@@ -1,9 +1,14 @@
 const pool = require('../config/db');
+const fs = require('fs');
+const path = require('path');
 
+// Crear cotización con múltiples imágenes
 const crearCotizacion = async (req, res) => {
   const {
     fecha,
     nombre_cliente,
+    nit_cc,
+    telefono,
     vehiculo,
     modelo,
     placa,
@@ -18,10 +23,14 @@ const crearCotizacion = async (req, res) => {
     items
   } = req.body;
 
+  const imagenes = req.files || []; // Array de imágenes
+
   // Normalizar valores vacíos
   const safeValues = {
     fecha: fecha || new Date(),
     nombre_cliente,
+    nit_cc: nit_cc || null,
+    telefono: telefono || null,
     vehiculo: vehiculo || null,
     modelo: modelo || null,
     placa,
@@ -40,15 +49,17 @@ const crearCotizacion = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Insertar cotización usando safeValues
+    // Insertar cotización
     const cotizacionRes = await client.query(
       `INSERT INTO cotizaciones 
-        (fecha, nombre_cliente, vehiculo, modelo, placa, kilometraje, nombre_mecanico, observaciones, estatus, porcentaje_descuento, descuento, subtotal, total)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        (fecha, nombre_cliente, nit_cc, telefono, vehiculo, modelo, placa, kilometraje, nombre_mecanico, observaciones, estatus, porcentaje_descuento, descuento, subtotal, total)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, $14,$15)
        RETURNING id_cotizacion`,
       [
         safeValues.fecha,
         safeValues.nombre_cliente,
+        safeValues.nit_cc,
+        safeValues.telefono,
         safeValues.vehiculo,
         safeValues.modelo,
         safeValues.placa,
@@ -65,6 +76,16 @@ const crearCotizacion = async (req, res) => {
 
     const idCotizacion = cotizacionRes.rows[0].id_cotizacion;
 
+    // 🔹 Asegúrate de parsear items
+let { items } = req.body;
+
+try {
+  items = JSON.parse(items); // Convierte el string JSON a array real
+} catch (err) {
+  console.error("Error parseando items:", err);
+  items = [];
+}
+
     // Insertar items
     for (const item of items) {
       await client.query(
@@ -75,8 +96,18 @@ const crearCotizacion = async (req, res) => {
       );
     }
 
+    // Insertar imágenes
+    for (const img of imagenes) {
+      const imageUrl = `uploads/${img.filename}`;;
+      await client.query(
+        `INSERT INTO cotizacion_imagenes (id_cotizacion, imagen_url)
+         VALUES ($1, $2)`,
+        [idCotizacion, imageUrl]
+      );
+    }
+
     await client.query('COMMIT');
-    res.status(201).json({ message: 'Cotización creada', id: idCotizacion });
+    res.status(201).json({ message: 'Cotización creada con imágenes', id: idCotizacion });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error(error);
@@ -86,17 +117,18 @@ const crearCotizacion = async (req, res) => {
   }
 };
 
+// Mostrar todas las cotizaciones
 const mostrarCotizaciones = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM cotizaciones ORDER BY id_cotizacion DESC');
     res.status(200).json(result.rows);
-  }
-  catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al obtener cotizaciones' });
   }
 };
 
+// Ver cotización con sus items e imágenes
 const verCotizacion = async (req, res) => {
   const { id } = req.params;
   try {
@@ -104,12 +136,16 @@ const verCotizacion = async (req, res) => {
     if (cotizacionRes.rows.length === 0) {
       return res.status(404).json({ message: 'Cotización no encontrada' });
     }
+
     const itemsRes = await pool.query('SELECT * FROM cotizacion_items WHERE id_cotizacion = $1', [id]);
+    const imagenesRes = await pool.query('SELECT imagen_url FROM cotizacion_imagenes WHERE id_cotizacion = $1', [id]);
+
     const cotizacion = cotizacionRes.rows[0];
     cotizacion.items = itemsRes.rows;
+    cotizacion.imagenes = imagenesRes.rows;
+
     res.status(200).json(cotizacion);
-  }
-  catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error al obtener cotización' });
   }
@@ -120,6 +156,8 @@ const actualizarCotizacion = async (req, res) => {
     id_cotizacion,
     fecha,
     nombre_cliente,
+    nit_cc,
+    telefono,
     vehiculo,
     modelo,
     placa,
@@ -137,6 +175,8 @@ const actualizarCotizacion = async (req, res) => {
   const safeValues = {
     fecha: fecha || new Date(),
     nombre_cliente,
+    nit_cc: nit_cc || null,
+    telefono: telefono || null,
     vehiculo: vehiculo || null,
     modelo: modelo || null,
     placa,
@@ -158,13 +198,15 @@ const actualizarCotizacion = async (req, res) => {
     // 1️⃣ Actualizar cotización
     await client.query(
       `UPDATE cotizaciones SET
-        fecha=$1, nombre_cliente=$2, vehiculo=$3, modelo=$4, placa=$5, kilometraje=$6,
-        nombre_mecanico=$7, observaciones=$8, estatus=$9,
-        porcentaje_descuento=$10, descuento=$11, subtotal=$12, total=$13
-       WHERE id_cotizacion=$14`,
+        fecha=$1, nombre_cliente=$2, nit_cc=$3, telefono=$4 vehiculo=$5, modelo=$6, placa=$7, kilometraje=$8,
+        nombre_mecanico=$9, observaciones=$10, estatus=$11,
+        porcentaje_descuento=$12, descuento=$13, subtotal=$14, total=$15
+       WHERE id_cotizacion=$16`,
       [
         safeValues.fecha,
         safeValues.nombre_cliente,
+        safeValues.nit_cc,
+        safeValues.telefono,
         safeValues.vehiculo,
         safeValues.modelo,
         safeValues.placa,
@@ -198,7 +240,7 @@ const actualizarCotizacion = async (req, res) => {
         `UPDATE cotizacion_items SET
           descripcion=$1, cantidad=$2, precio_unitario=$3, total=$4
          WHERE id_cotizacion_item=$5`,
-        [item.descripcion, item.cantidad, item.precio_unitario, item.sub_total, item.id_cotizacion_item]
+        [item.descripcion, item.cantidad, item.precio_unitario, item.total, item.id_cotizacion_item]
       );
     }
 
@@ -230,7 +272,71 @@ const actualizarCotizacion = async (req, res) => {
     res.status(500).json({ message: 'Error actualizando cotización' });
   } finally {
     client.release();
-  }
+  };
 };
 
-module.exports = { crearCotizacion, mostrarCotizaciones, verCotizacion, actualizarCotizacion };
+// Eliminar cotización con sus items e imágenes (incluye archivos físicos)
+const eliminarCotizacion = async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1️⃣ Obtener rutas de las imágenes antes de borrarlas de la DB
+    const imagenesRes = await client.query(
+      `SELECT imagen_url FROM cotizacion_imagenes WHERE id_cotizacion = $1`,
+      [id]
+    );
+
+    const imagenes = imagenesRes.rows;
+
+    // 2️⃣ Eliminar físicamente las imágenes
+    for (const img of imagenes) {
+      const filePath = path.join(__dirname, '..', img.imagen_url);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`No se pudo borrar: ${filePath}`, err.message);
+        } else {
+          console.log(`Imagen eliminada: ${filePath}`);
+        }
+      });
+    }
+
+    // 3️⃣ Eliminar registros de imágenes
+    await client.query(
+      `DELETE FROM cotizacion_imagenes WHERE id_cotizacion = $1`,
+      [id]
+    );
+
+    // 4️⃣ Eliminar items
+    await client.query(
+      `DELETE FROM cotizacion_items WHERE id_cotizacion = $1`,
+      [id]
+    );
+
+    // 5️⃣ Eliminar la cotización
+    const result = await client.query(
+      `DELETE FROM cotizaciones WHERE id_cotizacion = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Cotización no encontrada' });
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Cotización y archivos eliminados correctamente' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(error);
+    res.status(500).json({ message: 'Error eliminando cotización' });
+  } finally {
+    client.release();
+  }
+
+};
+
+
+module.exports = { crearCotizacion, mostrarCotizaciones, verCotizacion, actualizarCotizacion, eliminarCotizacion };
