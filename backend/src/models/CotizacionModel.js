@@ -198,7 +198,7 @@ const actualizarCotizacion = async (req, res) => {
     // 1️⃣ Actualizar cotización
     await client.query(
       `UPDATE cotizaciones SET
-        fecha=$1, nombre_cliente=$2, nit_cc=$3, telefono=$4 vehiculo=$5, modelo=$6, placa=$7, kilometraje=$8,
+        fecha=$1, nombre_cliente=$2, nit_cc=$3, telefono=$4, vehiculo=$5, modelo=$6, placa=$7, kilometraje=$8,
         nombre_mecanico=$9, observaciones=$10, estatus=$11,
         porcentaje_descuento=$12, descuento=$13, subtotal=$14, total=$15
        WHERE id_cotizacion=$16`,
@@ -293,7 +293,8 @@ const eliminarCotizacion = async (req, res) => {
 
     // 2️⃣ Eliminar físicamente las imágenes
     for (const img of imagenes) {
-      const filePath = path.join(__dirname, '..', img.imagen_url);
+      const filePath = path.join(__dirname, '..', 'public', img.imagen_url);
+
       fs.unlink(filePath, (err) => {
         if (err) {
           console.error(`No se pudo borrar: ${filePath}`, err.message);

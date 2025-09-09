@@ -13,6 +13,16 @@ const QuotationPDFView = () => {
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
 
+  // Agrega esta función arriba del componente
+const formatCurrency = (value) => {
+  if (typeof value !== "number") value = Number(value);
+  if (isNaN(value)) return "$ 0";
+  return `$ ${value.toLocaleString("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+};
+
   // Fetch quotation details
   const fetchQuotation = async () => {
     try {
@@ -195,8 +205,9 @@ const QuotationPDFView = () => {
                 >
                   <td style={tdStyle}>{item.descripcion}</td>
                   <td style={tdStyle}>{item.cantidad}</td>
-                  <td style={tdStyle}>${item.precio_unitario}</td>
-                  <td style={tdStyle}>${item.total}</td>
+                  <td style={tdStyle}>{formatCurrency(item.precio_unitario)}</td>
+<td style={tdStyle}>{formatCurrency(item.total)}</td>
+               
                 </tr>
               ))
             ) : (
@@ -209,22 +220,31 @@ const QuotationPDFView = () => {
           </tbody>
         </table>
 
-        {/* Totals */}
-        <div
-          style={{ textAlign: "right", marginBottom: "30px", fontSize: "14px" }}
-        >
-          <p>
-            <strong>Subtotal:</strong> ${quotation.subtotal}
-          </p>
-          {quotation.descuento > 0 && (
-            <p>
-              <strong>Descuento:</strong> -${quotation.descuento}
-            </p>
-          )}
-          <p style={{ fontSize: "16px", fontWeight: "600", color: "#1E3A8A" }}>
-            <strong>Total:</strong> ${quotation.total}
-          </p>
-        </div>
+       {/* Totals */}
+<div className="w-full max-w-sm ml-auto mb-8">
+  <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-100">
+    <div className="text-right space-y-2">
+      <p className="text-sm text-gray-600">
+        <span className="font-medium">Subtotal:</span>{" "}
+        {formatCurrency(quotation.subtotal)}
+      </p>
+
+      {quotation.descuento > 0 && (
+        <p className="text-sm text-red-600">
+          <span className="font-medium">Descuento:</span>{" "}
+          -{formatCurrency(quotation.descuento)}
+        </p>
+      )}
+
+      <p className="text-lg font-semibold text-blue-900 border-t border-gray-200 pt-3">
+        <span className="font-bold">Total:</span>{" "}
+        {formatCurrency(quotation.total)}
+      </p>
+    </div>
+  </div>
+</div>
+
+
 
         {/* Signature */}
         <div style={{ marginBottom: "40px", fontSize: "13px" }}>

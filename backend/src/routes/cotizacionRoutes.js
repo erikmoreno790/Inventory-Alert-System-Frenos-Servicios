@@ -8,15 +8,10 @@ const path = require("path");
 // Configuración de multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/uploads"); // Carpeta donde se guardarán las imágenes
+    cb(null, path.join(__dirname, "../public/uploads"));
   },
   filename: (req, file, cb) => {
-    cb(
-      null,
-      `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(
-        file.originalname
-      )}`
-    );
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
