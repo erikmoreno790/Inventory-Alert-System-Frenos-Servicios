@@ -15,28 +15,19 @@ const RepuestoModel = {
     // Obtener todos los repuestos
     async getAllRepuestos() {
         const query = `
-      SELECT r.id_product, r.nombre, r.stock_actual, r.stock_minimo, c.nombre AS categoria
-      FROM repuestos r
-      JOIN categorias c ON r.id_categoria = c.id_categoria
-      ORDER BY r.id_product ASC;
+      SELECT * FROM repuestos
+      ORDER BY id_repuesto ASC;
     `;
         const { rows } = await pool.query(query);
         return rows;
     },
 
-    //Obtener todas las categorías
-    async getAllCategorias() {
-        const query = `SELECT * FROM categorias ORDER BY nombre ASC;`;
-        const { rows } = await pool.query(query);
-        return rows;
-    },
-
     // Obtener todos los proveedores
-    async getProviders() {
-        const query = `SELECT * FROM proveedores ORDER BY nombre ASC;`;
-        const { rows } = await pool.query(query);
-        return rows;
-    },
+    // async getProviders() {
+    //     const query = `SELECT * FROM proveedores ORDER BY nombre ASC;`;
+    //     const { rows } = await pool.query(query);
+    //     return rows;
+    // },
 
     // Obtener un repuesto por ID
     async getRepuestoById(id_product) {
