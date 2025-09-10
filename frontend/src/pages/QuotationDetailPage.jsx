@@ -81,7 +81,9 @@ const QuotationDetailsPage = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div
-        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={toggleSidebar} />
         <main className="p-6 max-w-5xl mx-auto">
@@ -92,7 +94,9 @@ const QuotationDetailsPage = () => {
             </h1>
             <div className="flex gap-2">
               <button
-                onClick={() => navigate(`/cotizacion/pdf/${quotation.id_cotizacion}`)}
+                onClick={() =>
+                  navigate(`/cotizacion/pdf/${quotation.id_cotizacion}`)
+                }
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
               >
                 Imprimir
@@ -114,7 +118,9 @@ const QuotationDetailsPage = () => {
                 </button>
               )}
               <button
-                onClick={() => navigate(`/cotizaciones/editar/${quotation.id_cotizacion}`)}
+                onClick={() =>
+                  navigate(`/cotizaciones/editar/${quotation.id_cotizacion}`)
+                }
                 className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition"
               >
                 Editar / Modificar
@@ -132,16 +138,36 @@ const QuotationDetailsPage = () => {
           <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h2 className="text-lg font-semibold mb-2">Datos del Cliente</h2>
-                <p><strong>Nombre:</strong> {quotation.nombre_cliente}</p>
-                <p><strong>Vehículo:</strong> {quotation.vehiculo}</p>
-                <p><strong>Kilometraje:</strong> {quotation.kilometraje || "N/A"}</p>
+                <h2 className="text-lg font-semibold mb-2">
+                  Datos del Cliente
+                </h2>
+                <p>
+                  <strong>Nombre:</strong> {quotation.nombre_cliente}
+                </p>
+                <p>
+                  <strong>Vehículo:</strong> {quotation.vehiculo}
+                </p>
+                <p>
+                  <strong>Kilometraje:</strong> {quotation.kilometraje || "N/A"}
+                </p>
               </div>
               <div>
-                <h2 className="text-lg font-semibold mb-2">Detalles de Cotización</h2>
-                <p><strong>Mecánico:</strong> {quotation.nombre_mecanico || "N/A"}</p>
-                <p><strong>Fecha:</strong> {quotation.fecha ? new Date(quotation.fecha).toLocaleDateString() : ""}</p>
-                <p><strong>Estatus:</strong> {quotation.estatus}</p>
+                <h2 className="text-lg font-semibold mb-2">
+                  Detalles de Cotización
+                </h2>
+                <p>
+                  <strong>Mecánico:</strong>{" "}
+                  {quotation.nombre_mecanico || "N/A"}
+                </p>
+                <p>
+                  <strong>Fecha:</strong>{" "}
+                  {quotation.fecha
+                    ? new Date(quotation.fecha).toLocaleDateString()
+                    : ""}
+                </p>
+                <p>
+                  <strong>Estatus:</strong> {quotation.estatus}
+                </p>
               </div>
             </div>
           </div>
@@ -160,14 +186,15 @@ const QuotationDetailsPage = () => {
               <h2 className="text-lg font-semibold mb-4">Imágenes Asociadas</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {quotation.imagenes.map((img, idx) => (
-                  <div key={idx} className="relative border rounded-lg overflow-hidden">
+                  <div
+                    key={idx}
+                    className="relative border rounded-lg overflow-hidden"
+                  >
                     <img
-                      src={`${import.meta.env.VITE_SERVER_URL}/${img.imagen_url}`}
+                      src={img.url} // ✅ Usamos la URL completa del backend
                       alt={`cotizacion-img-${idx}`}
                       className="w-full h-32 object-cover cursor-pointer hover:opacity-80 transition"
-                      onClick={() =>
-                        setSelectedImage(`${import.meta.env.VITE_API_URL}/${img.imagen_url}`)
-                      }
+                      onClick={() => setSelectedImage(img.url)} // ✅ También aquí
                     />
                   </div>
                 ))}
@@ -178,7 +205,9 @@ const QuotationDetailsPage = () => {
           {/* 🔹 Tabla de ítems */}
           {quotation.items && quotation.items.length > 0 && (
             <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Productos / Servicios</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                Productos / Servicios
+              </h2>
               <div className="overflow-x-auto">
                 <table className="w-full border border-gray-300">
                   <thead className="bg-gray-100">
@@ -193,9 +222,15 @@ const QuotationDetailsPage = () => {
                     {quotation.items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50">
                         <td className="border p-2">{item.descripcion}</td>
-                        <td className="border p-2 text-center">{item.cantidad}</td>
-                        <td className="border p-2 text-right">{formatCurrency(item.precio_unitario)}</td>
-                        <td className="border p-2 text-right font-semibold">{formatCurrency(item.sub_total || item.total)}</td>
+                        <td className="border p-2 text-center">
+                          {item.cantidad}
+                        </td>
+                        <td className="border p-2 text-right">
+                          {formatCurrency(item.precio_unitario)}
+                        </td>
+                        <td className="border p-2 text-right font-semibold">
+                          {formatCurrency(item.sub_total || item.total)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -218,7 +253,9 @@ const QuotationDetailsPage = () => {
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="font-medium">Total:</span>
-                  <span className="text-xl font-bold">{formatCurrency(quotation.total)}</span>
+                  <span className="text-xl font-bold">
+                    {formatCurrency(quotation.total)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -230,7 +267,11 @@ const QuotationDetailsPage = () => {
       {selectedImage && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="relative">
-            <img src={selectedImage} alt="Vista previa" className="max-h-[80vh] max-w-[90vw] rounded-lg" />
+            <img
+              src={selectedImage}
+              alt="Vista previa"
+              className="max-h-[80vh] max-w-[90vw] rounded-lg"
+            />
             <button
               className="absolute top-2 right-2 bg-red-600 text-white rounded-full px-3 py-1"
               onClick={() => setSelectedImage(null)}

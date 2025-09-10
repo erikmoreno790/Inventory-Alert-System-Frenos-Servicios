@@ -77,14 +77,14 @@ const crearCotizacion = async (req, res) => {
     const idCotizacion = cotizacionRes.rows[0].id_cotizacion;
 
     // 🔹 Asegúrate de parsear items
-let { items } = req.body;
+    let { items } = req.body;
 
-try {
-  items = JSON.parse(items); // Convierte el string JSON a array real
-} catch (err) {
-  console.error("Error parseando items:", err);
-  items = [];
-}
+    try {
+      items = JSON.parse(items); // Convierte el string JSON a array real
+    } catch (err) {
+      console.error("Error parseando items:", err);
+      items = [];
+    }
 
     // Insertar items
     for (const item of items) {
@@ -132,17 +132,35 @@ const mostrarCotizaciones = async (req, res) => {
 const verCotizacion = async (req, res) => {
   const { id } = req.params;
   try {
-    const cotizacionRes = await pool.query('SELECT * FROM cotizaciones WHERE id_cotizacion = $1', [id]);
+    // 1. Buscar cotización
+    const cotizacionRes = await pool.query(
+      'SELECT * FROM cotizaciones WHERE id_cotizacion = $1',
+      [id]
+    );
     if (cotizacionRes.rows.length === 0) {
       return res.status(404).json({ message: 'Cotización no encontrada' });
     }
 
-    const itemsRes = await pool.query('SELECT * FROM cotizacion_items WHERE id_cotizacion = $1', [id]);
-    const imagenesRes = await pool.query('SELECT imagen_url FROM cotizacion_imagenes WHERE id_cotizacion = $1', [id]);
+    // 2. Buscar items asociados
+    const itemsRes = await pool.query(
+      'SELECT * FROM cotizacion_items WHERE id_cotizacion = $1',
+      [id]
+    );
 
+    // 3. Buscar imágenes asociadas
+    const imagenesRes = await pool.query(
+      'SELECT imagen_url FROM cotizacion_imagenes WHERE id_cotizacion = $1',
+      [id]
+    );
+
+    // 4. Armar respuesta
     const cotizacion = cotizacionRes.rows[0];
     cotizacion.items = itemsRes.rows;
-    cotizacion.imagenes = imagenesRes.rows;
+
+    // Convertir URLs relativas en absolutas
+    cotizacion.imagenes = imagenesRes.rows.map(img => ({
+      url: `${req.protocol}://${req.get("host")}/${img.imagen_url}`
+    }));
 
     res.status(200).json(cotizacion);
   } catch (error) {
