@@ -7,9 +7,9 @@ import api from "../api";
 
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [totalProductos, setTotalProductos] = useState(0);
+ // const [totalProductos, setTotalProductos] = useState(0);
   const [totalCotizaciones, setTotalCotizaciones] = useState(0);
-  const [bajoStock, setBajoStock] = useState(0);
+  //const [bajoStock, setBajoStock] = useState(0);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,19 +28,19 @@ const DashboardPage = () => {
           },
         };
 
-        const [productosRes, alertasRes, cotizacionesRes] = await Promise.all([
-          api.get("/products", config),
+        const [ alertasRes, cotizacionesRes] = await Promise.all([
+          //api.get("/products", config),
           api.get("/alerts", config), // Ajusta si tu ruta es diferente
           api.get("/cotizaciones", config), // Ajusta si tu ruta es diferente
         ]);
 
-        const productos = productosRes.data;
+        //const productos = productosRes.data;
         const alertasActivas = alertasRes.data;
         const cotizaciones = cotizacionesRes.data;
 
-        setTotalProductos(productos.length);
+        //setTotalProductos(productos.length);
         setTotalCotizaciones(cotizaciones.length);
-        setBajoStock(productos.filter((p) => p.stock < p.stock_minimo).length);
+        //setBajoStock(productos.filter((p) => p.stock < p.stock_minimo).length);
         setAlertas(alertasActivas.slice(0, 5)); // últimas 5 alertas
       } catch (error) {
         console.error(
@@ -81,21 +81,21 @@ const DashboardPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                {/*<div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
                   <Boxes className="text-blue-600" />
                   <div>
                     <p className="text-gray-600 text-sm">Total Repuestos</p>
                     <p className="text-xl font-bold">{totalProductos}</p>
                   </div>
-                </div>
+                </div>*/}
 
-                <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
+                {/*<div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
                   <AlertTriangle className="text-yellow-600" />
                   <div>
                     <p className="text-gray-600 text-sm">Bajo Stock</p>
                     <p className="text-xl font-bold">{bajoStock}</p>
                   </div>
-                </div>
+                </div>*/}
 
                 <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
                   <Bell className="text-red-600" />

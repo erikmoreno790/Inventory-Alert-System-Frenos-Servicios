@@ -14,9 +14,10 @@ const QuotationsHistoryPage = () => {
     estatus: "",
     fecha: "",
   });
+  const [currentPage, setCurrentPage] = useState(1); // 🔹 Página actual
+  const itemsPerPage = 8; // 🔹 Mostrar solo 8 cotizaciones
 
   const navigate = useNavigate();
-
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   // 🔹 Cargar todas las cotizaciones
@@ -25,7 +26,13 @@ const QuotationsHistoryPage = () => {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await api.get("/cotizaciones", config);
-      setQuotations(data);
+
+      // 🔹 Ordenar por fecha descendente (últimas primero)
+      const sortedData = data.sort(
+        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+      );
+
+      setQuotations(sortedData);
     } catch (err) {
       console.error(err);
       alert("Error cargando cotizaciones");
@@ -60,13 +67,21 @@ const QuotationsHistoryPage = () => {
 
     return (
       nombre_cliente.includes(filters.nombre_cliente.toLowerCase()) &&
-      placa.includes(filters.placa.toLowerCase()) && // 🔹 aquí va placa
+      placa.includes(filters.placa.toLowerCase()) &&
       (filters.estatus
-        ? estatus === filters.estatus.toLowerCase() // 🔹 comparar en minúsculas
+        ? estatus === filters.estatus.toLowerCase()
         : true) &&
       (filters.fecha ? fecha.startsWith(filters.fecha) : true)
     );
   });
+
+  // 🔹 Paginación
+  const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentQuotations = filteredQuotations.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -139,23 +154,18 @@ const QuotationsHistoryPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredQuotations.length > 0 ? (
-                  filteredQuotations.map((q, index) => (
+                {currentQuotations.length > 0 ? (
+                  currentQuotations.map((q, index) => (
                     <tr
                       key={q.id ? `quotation-${q.id}` : `quotation-${index}`}
                       className="hover:bg-gray-100"
                     >
-                      {/* 🔹 Cliente */}
                       <td className="border p-2">{q.nombre_cliente}</td>
-                      {/* 🔹 Placa (Vehículo) */}
                       <td className="border p-2">{q.placa}</td>
-                      {/* 🔹 Fecha */}
                       <td className="border p-2">
                         {q.fecha ? new Date(q.fecha).toLocaleDateString() : ""}
                       </td>
-                      {/* 🔹 Estatus */}
                       <td className="border p-2 capitalize">{q.estatus}</td>
-                      {/* 🔹 Total */}
                       <td className="border p-2 font-bold">
                         {new Intl.NumberFormat("es-CO", {
                           style: "currency",
@@ -163,7 +173,6 @@ const QuotationsHistoryPage = () => {
                           minimumFractionDigits: 2,
                         }).format(q.total || 0)}
                       </td>
-                      {/* 🔹 Botones */}
                       <td className="border p-2 text-center">
                         <div className="flex justify-center gap-2">
                           <button
@@ -194,6 +203,39 @@ const QuotationsHistoryPage = () => {
               </tbody>
             </table>
           </div>
+
+          {/* 🔹 Paginación */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4 gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 border rounded ${
+                    currentPage === i + 1
+                      ? "bg-blue-500 text-white"
+                      : "bg-white"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </div>

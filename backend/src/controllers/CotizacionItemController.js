@@ -38,6 +38,24 @@ const cotizacionItemController = {
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
+    },
+
+    async getApprovedItemsReportByDate(req, res) {
+        try {
+            const { fechaInicio, fechaFin } = req.query;
+
+            if (!fechaInicio || !fechaFin) {
+                return res.status(400).json({ 
+                    error: 'Debes enviar fechaInicio y fechaFin en formato YYYY-MM-DD' 
+                });
+            }
+
+            const reporte = await CotizacionItem.getApprovedItemsReportByDate(fechaInicio, fechaFin);
+            res.json(reporte);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Error al generar el reporte' });
+        }
     }
 };
 

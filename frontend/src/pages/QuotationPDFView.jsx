@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../api";
 import html2pdf from "html2pdf.js";
 import logo from "../assets/logo.png";
@@ -39,9 +39,9 @@ const formatCurrency = (value) => {
   };
 
   // Load data on component mount
-  useState(() => {
-    fetchQuotation();
-  }, [id]);
+  useEffect(() => {
+  fetchQuotation();
+}, [id]);
 
   if (loading) {
     return (
@@ -71,7 +71,7 @@ const formatCurrency = (value) => {
       margin: 0.5,
       filename: `Cotizacion-${quotation.nombre_cliente || "cliente"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
+      html2canvas: { scale: 1.5 },
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
     };
     html2pdf().set(opt).from(element).save();
@@ -163,7 +163,7 @@ const formatCurrency = (value) => {
                 <strong>Kilometraje:</strong> {quotation.kilometraje}
               </p>
               <p>
-                <strong>Date:</strong>{" "}
+                <strong>Fecha:</strong>{" "}
                 {quotation.fecha
                   ? new Date(quotation.fecha).toLocaleDateString("es-ES", {
                       weekday: "long",
@@ -222,27 +222,31 @@ const formatCurrency = (value) => {
 
        {/* Totals */}
 <div className="w-full max-w-sm ml-auto mb-8">
-  <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-100">
+  <div className="bg-white p-4">
     <div className="text-right space-y-2">
-      <p className="text-sm text-gray-600">
-        <span className="font-medium">Subtotal:</span>{" "}
-        {formatCurrency(quotation.subtotal)}
-      </p>
+      <p style={{ fontSize: "14px", color: "#4B5563" }}>
+  <strong>Subtotal:</strong> {formatCurrency(quotation.subtotal)}
+</p>
 
-      {quotation.descuento > 0 && (
-        <p className="text-sm text-red-600">
-          <span className="font-medium">Descuento:</span>{" "}
-          -{formatCurrency(quotation.descuento)}
-        </p>
-      )}
+{quotation.descuento > 0 && (
+  <p style={{ fontSize: "14px", color: "#DC2626" }}>
+    <strong>Descuento:</strong> -{formatCurrency(quotation.descuento)}
+  </p>
+)}
 
-      <p className="text-lg font-semibold text-blue-900 border-t border-gray-200 pt-3">
-        <span className="font-bold">Total:</span>{" "}
-        {formatCurrency(quotation.total)}
-      </p>
+      <p style={{
+  fontSize: "16px",
+  fontWeight: "bold",
+  color: "#1E3A8A",
+  borderTop: "1px solid #D1D5DB",
+  paddingTop: "8px"
+}}>
+  <strong>Total:</strong> {formatCurrency(quotation.total)}
+</p>
     </div>
   </div>
 </div>
+
 
 
 
@@ -260,31 +264,45 @@ const formatCurrency = (value) => {
           ></div>
         </div>
 
-        {/* Footer */}
-        <footer
-          style={{
-            borderTop: "1px solid #E2E8F0",
-            marginTop: "40px",
-            paddingTop: "15px",
-            textAlign: "center",
-            fontSize: "12px",
-            color: "#4A5568",
-          }}
-        >
-          <p style={{ margin: "0", fontWeight: "500" }}>
-            © {new Date().getFullYear()} Frenos y Servicios del Valle. Todos los
-            derechos reservados.
-          </p>
-          <p style={{ margin: "5px 0 0" }}>
-            Desarrollado por <strong>Erik Moreno</strong> | Contact:{" "}
-            <a
-              href="mailto:frenosyserviciosdelvalle@hotmail.com"
-              style={{ color: "#2B6CB0" }}
-            >
-              frenosyserviciosdelvalle@hotmail.com
-            </a>
-          </p>
-        </footer>
+       {/* Footer */}
+<footer
+  style={{
+    borderTop: "1px solid #E2E8F0",
+    marginTop: "40px",
+    paddingTop: "15px",
+    textAlign: "center",
+    fontSize: "13px",
+    color: "#4A5568",
+    lineHeight: "1.6",
+  }}
+>
+  <p style={{ margin: "0", fontWeight: "500" }}>
+    © {new Date().getFullYear()} Frenos y Servicios del Valle. Todos los
+    derechos reservados.
+  </p>
+
+  <p style={{ margin: "8px 0 0" }}>
+    Desarrollado por <strong>Erik Moreno</strong>
+  </p>
+
+  <p style={{ margin: "5px 0 0" }}>
+    📧{" "}
+    <a
+      href="mailto:erikmoreno790@gmail.com"
+      style={{ color: "#2B6CB0", textDecoration: "none" }}
+    >
+      erikmoreno790@gmail.com
+    </a>{" "}
+    | 📱{" "}
+    <a
+      href="tel:+573027515585"
+      style={{ color: "#2B6CB0", textDecoration: "none" }}
+    >
+      302 751 5585
+    </a>
+  </p>
+</footer>
+
       </div>
 
       {/* Buttons */}

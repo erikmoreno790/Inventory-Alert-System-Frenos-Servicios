@@ -53,8 +53,14 @@ const Sidebar = () => {
       label: "Salidas",
       icon: <ClipboardList size={18} />,
     },
-    { to: "/ordenes-servicio", label: "Órdenes", icon: <FileText size={18} /> },
-    { to: "/alertas", label: "Alertas", icon: <Bell size={18} /> },
+    { to: "/reporte-repuestos-usados", 
+      label: "Reportes", 
+      icon: <FileText size={18} /> 
+    },
+    { to: "/alertas", 
+      label: "Alertas", 
+      icon: <Bell size={18} /> 
+    },
     {
       to: "/alertas/configuracion",
       label: "Configurar Alertas",
