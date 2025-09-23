@@ -1,144 +1,217 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { format } from 'date-fns';
+// src/pages/MovementsHistory.jsx
+import { useEffect, useState } from "react";
+import Sidebar from "../components/Sidebar";
+import TopNavbar from "../components/TopNavbar";
+import api from "../api";
 
-const MovementsHistoryPage = () => {
-  const [movimientos, setMovimientos] = useState([]);
-  const [productos, setProductos] = useState([]);
+const MovementsHistory = () => {
+  const token = localStorage.getItem("token");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [movements, setMovements] = useState([]);
+  const [filteredMovements, setFilteredMovements] = useState([]);
+
+  // Filtros
   const [filters, setFilters] = useState({
-    tipo: '',
-    producto_id: '',
-    fecha_inicio: '',
-    fecha_fin: '',
+    producto: "",
+    tipo: "",
+    motivo: "",
+    factura: "",
+    fechaInicio: "",
+    fechaFin: "",
   });
-  const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('token');
 
-  const fetchMovimientos = async () => {
-    setLoading(true);
-    try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const params = {};
-
-      if (filters.tipo) params.tipo = filters.tipo;
-      if (filters.producto_id) params.producto_id = filters.producto_id;
-      if (filters.fecha_inicio) params.fecha_inicio = filters.fecha_inicio;
-      if (filters.fecha_fin) params.fecha_fin = filters.fecha_fin;
-
-      const res = await api.get('/inventory/movements', {
-        ...config,
-        params,
-      });
-      setMovimientos(res.data);
-    } catch (err) {
-      console.error('Error al obtener movimientos:', err);
-    } finally {
-      setLoading(false);
-    }
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
-  const fetchProductos = async () => {
-    try {
-      const res = await api.get('/products', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setProductos(res.data);
-    } catch (err) {
-      console.error('Error al cargar productos:', err);
-    }
-  };
-
+  // 🔹 Cargar historial de movimientos
   useEffect(() => {
-    fetchProductos();
-    fetchMovimientos();
-    // eslint-disable-next-line
-  }, []);
+    const fetchData = async () => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const res = await api.get("/repuestos/movimientos", config);
 
-  const handleChange = (e) => {
+        // Normalizamos los datos para la tabla
+        const mapped = res.data.map((m) => ({
+          id: `${m.tipo_movimiento}-${m.movimiento_id}`,
+          fecha: m.fecha,
+          producto: m.repuesto || "Desconocido",
+          tipo: m.tipo_movimiento,
+          motivo: m.subtipo,
+          cantidad: m.cantidad,
+          destino: m.contraparte || "-",
+          factura: m.factura || "",
+        }));
+
+        setMovements(mapped);
+        setFilteredMovements(mapped);
+      } catch (err) {
+        console.error("Error cargando movimientos:", err);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  // 🔹 Manejo de cambios en filtros
+  const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFilter = (e) => {
-    e.preventDefault();
-    fetchMovimientos();
-  };
+  // 🔹 Aplicar filtros
+  useEffect(() => {
+    let result = movements;
+
+    if (filters.producto) {
+      result = result.filter((m) =>
+        m.producto.toLowerCase().includes(filters.producto.toLowerCase())
+      );
+    }
+    if (filters.tipo) {
+      result = result.filter((m) => m.tipo === filters.tipo);
+    }
+    if (filters.motivo) {
+      result = result.filter((m) =>
+        m.motivo?.toLowerCase().includes(filters.motivo.toLowerCase())
+      );
+    }
+    if (filters.factura) {
+      result = result.filter((m) =>
+        m.factura?.toLowerCase().includes(filters.factura.toLowerCase())
+      );
+    }
+    if (filters.fechaInicio) {
+      result = result.filter(
+        (m) => new Date(m.fecha) >= new Date(filters.fechaInicio)
+      );
+    }
+    if (filters.fechaFin) {
+      result = result.filter(
+        (m) => new Date(m.fecha) <= new Date(filters.fechaFin)
+      );
+    }
+
+    setFilteredMovements(result);
+  }, [filters, movements]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Historial de Movimientos</h1>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Filtros */}
-      <form className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded shadow mb-6" onSubmit={handleFilter}>
-        <div>
-          <label className="block text-sm mb-1">Tipo</label>
-          <select name="tipo" value={filters.tipo} onChange={handleChange} className="w-full border rounded px-2 py-1">
-            <option value="">Todos</option>
-            <option value="entrada">Entrada</option>
-            <option value="salida">Salida</option>
-          </select>
-        </div>
+      <div
+        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
+      >
+        <TopNavbar onToggleSidebar={toggleSidebar} />
 
-        <div>
-          <label className="block text-sm mb-1">Producto</label>
-          <select name="producto_id" value={filters.producto_id} onChange={handleChange} className="w-full border rounded px-2 py-1">
-            <option value="">Todos</option>
-            {productos.map((p) => (
-              <option key={p.id} value={p.id}>{p.nombre}</option>
-            ))}
-          </select>
-        </div>
+        <main className="p-6 max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">
+            Historial de Movimientos
+          </h2>
 
-        <div>
-          <label className="block text-sm mb-1">Desde</label>
-          <input type="date" name="fecha_inicio" value={filters.fecha_inicio} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-        </div>
+          {/* 🔹 Filtros */}
+          <div className="bg-white p-6 rounded-xl shadow-md mb-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <input
+              type="text"
+              name="producto"
+              placeholder="Buscar por producto"
+              value={filters.producto}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            />
+            <select
+              name="tipo"
+              value={filters.tipo}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            >
+              <option value="">Todos</option>
+              <option value="Entrada">Entrada</option>
+              <option value="Salida">Salida</option>
+            </select>
+            <input
+              type="text"
+              name="motivo"
+              placeholder="Buscar por motivo"
+              value={filters.motivo}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              type="text"
+              name="factura"
+              placeholder="Buscar por factura"
+              value={filters.factura}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              type="date"
+              name="fechaInicio"
+              value={filters.fechaInicio}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              type="date"
+              name="fechaFin"
+              value={filters.fechaFin}
+              onChange={handleFilterChange}
+              className="border rounded-lg px-3 py-2"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm mb-1">Hasta</label>
-          <input type="date" name="fecha_fin" value={filters.fecha_fin} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-        </div>
-
-        <div className="md:col-span-4 text-right">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Aplicar Filtros</button>
-        </div>
-      </form>
-
-      {/* Tabla */}
-      {loading ? (
-        <div className="text-gray-500">Cargando movimientos...</div>
-      ) : movimientos.length === 0 ? (
-        <div className="text-gray-500">No se encontraron movimientos.</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border px-3 py-2 text-left">Fecha</th>
-                <th className="border px-3 py-2 text-left">Tipo</th>
-                <th className="border px-3 py-2 text-left">Producto</th>
-                <th className="border px-3 py-2 text-left">Cantidad</th>
-                <th className="border px-3 py-2 text-left">Usuario</th>
-                <th className="border px-3 py-2 text-left">Observación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {movimientos.map((m) => (
-                <tr key={m.id}>
-                  <td className="border px-3 py-2">{format(new Date(m.fecha), 'yyyy-MM-dd HH:mm')}</td>
-                  <td className="border px-3 py-2 capitalize">{m.tipo}</td>
-                  <td className="border px-3 py-2">{m.producto?.nombre || '—'}</td>
-                  <td className="border px-3 py-2">{m.cantidad}</td>
-                  <td className="border px-3 py-2">{m.usuario}</td>
-                  <td className="border px-3 py-2">{m.observacion}</td>
+          {/* 🔹 Tabla */}
+          <div className="bg-white rounded-xl shadow-md overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-200 text-gray-700">
+                  <th className="px-4 py-2 text-left">Fecha</th>
+                  <th className="px-4 py-2 text-left">Producto</th>
+                  <th className="px-4 py-2 text-left">Tipo</th>
+                  <th className="px-4 py-2 text-left">Motivo</th>
+                  <th className="px-4 py-2 text-left">Cantidad</th>
+                  <th className="px-4 py-2 text-left">Destino/Proveedor</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {filteredMovements.length > 0 ? (
+                  filteredMovements.map((m) => (
+                    <tr key={m.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-2">
+                        {new Date(m.fecha).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">{m.producto}</td>
+                      <td
+                        className={`px-4 py-2 font-semibold ${
+                          m.tipo === "Entrada" ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {m.tipo}
+                      </td>
+                      <td className="px-4 py-2">{m.motivo}</td>
+                      <td className="px-4 py-2">{m.cantidad}</td>
+                      <td className="px-4 py-2">{m.destino}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="text-center text-gray-500 py-6"
+                    >
+                      No se encontraron movimientos.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
 
-export default MovementsHistoryPage;
+export default MovementsHistory;

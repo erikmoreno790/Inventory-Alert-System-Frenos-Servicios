@@ -1,55 +1,96 @@
 const pool = require('../config/db');
 
-// const findAlertByEmail = async (email) => {
-//     const res = await pool.query('SELECT * FROM alertas WHERE email = $1', [
-//         email
-//     ]);
-//     return res.rows[0];
-// };
-
-const createAlert = async ({
-    id_product, fecha_alerta, canal, enviado_a, estado, mensaje
-}) => {
-    const res = await pool.query(
-        `INSERT INTO alertas (id_product, fecha_alerta, canal, enviado_a, estado, mensaje) 
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_alerta;`,
-        [id_product, fecha_alerta, canal, enviado_a, estado, mensaje]
+const AlertaModel = {
+  // Crear alerta
+  async create({ repuesto_id, mensaje, tipo }) {
+    const result = await pool.query(
+      `INSERT INTO alertas (repuesto_id, mensaje, tipo) 
+       VALUES ($1, $2, $3) RETURNING *`,
+      [repuesto_id, mensaje, tipo]
     );
-    return { id_alerta: res.rows[0].id_alerta, ...res.rows[0] };
-};
+    return result.rows[0];
+  },
 
-const getAllAlerts = async () => {
-    const res = await pool.query('SELECT id_alerta, id_product, fecha_alerta, canal, enviado_a, estado, mensaje FROM alertas');
-    return res.rows;
-};
-const getAlertById = async (id_alerta) => {
-    const res = await pool.query('SELECT id_alerta, id_product, fecha_alerta, canal, enviado_a, estado, mensaje FROM alertas WHERE id = $1', [id_alerta]);
-    return res.rows[0];
-};
+ // Obtener todas las alertas
+async findAll() {
+  const result = await pool.query(
+    `SELECT a.*, r.nombre AS repuesto_nombre
+     FROM alertas a
+     LEFT JOIN repuestos r ON r.repuesto_id = a.repuesto_id
+     ORDER BY a.fecha DESC`
+  );
+  return result.rows;
+},
 
-const updateAlert = async (id_alerta, { name, role }) => {
-    const res = await pool.query(
-        'UPDATE alertas SET name = $1, role = $2 WHERE id_alerta = $3 RETURNING *',
-        [name, role, id_alerta]
+// Obtener una alerta por ID
+async findById(id) {
+  const result = await pool.query(
+    `SELECT a.*, r.nombre AS repuesto_nombre
+     FROM alertas a
+     LEFT JOIN repuestos r ON r.repuesto_id = a.repuesto_id
+     WHERE a.alerta_id = $1`,
+    [id]
+  );
+  return result.rows[0];
+},
+
+  // Marcar como leída
+  async markAsRead(id) {
+    const result = await pool.query(
+      `UPDATE alertas SET leida = TRUE WHERE alerta_id = $1 RETURNING *`,
+      [id]
     );
-    return res.rows[0];
+    return result.rows[0];
+  },
+
+  // Eliminar alerta
+  async delete(id) {
+    const result = await pool.query(
+      `DELETE FROM alertas WHERE alerta_id = $1 RETURNING *`,
+      [id]
+    );
+    return result.rows[0];
+  },
+
+  async checkStockAndAlert(repuesto_id) {
+    const result = await pool.query(
+      `SELECT * FROM repuestos WHERE repuesto_id = $1`,
+      [repuesto_id]
+    );
+    const repuesto = result.rows[0];
+
+    if (repuesto && repuesto.stock < repuesto.stock_minimo) {
+      // Verificar si ya existe alerta activa para este repuesto
+      const existe = await pool.query(
+        `SELECT * FROM alertas 
+         WHERE repuesto_id = $1 AND tipo = 'stock_bajo' AND leida = FALSE`,
+        [repuesto_id]
+      );
+
+      if (existe.rows.length === 0) {
+        await this.create({
+          repuesto_id: repuesto.repuesto_id,
+          mensaje: `El repuesto "${repuesto.nombre}" tiene stock bajo (${repuesto.stock}/${repuesto.stock_minimo})`,
+          tipo: 'stock_bajo'
+        });
+      }
+    }
+  },
+
+  // Generar alertas para todos los repuestos
+  async generarAlertasStockBajo() {
+    const result = await pool.query(
+      `SELECT * FROM repuestos WHERE stock < stock_minimo`
+    );
+
+    let count = 0;
+    for (const repuesto of result.rows) {
+      await this.checkStockAndAlert(repuesto.repuesto_id);
+      count++;
+    }
+
+    return count; // cantidad revisada
+  }
 };
 
-const deleteAlert = async (id_alerta) => {
-    await pool.query('DELETE FROM alertas WHERE id_alerta = $1', [id_alerta]);
-};
-
-const getAlertsByProductId = async (id_product) => {
-    const res = await pool.query('SELECT * FROM alertas WHERE id_product = $1', [id_product]);
-    return res.rows;
-};
-
-module.exports = {
-    createAlert,
-    getAllAlerts,
-    getAlertById,
-    updateAlert,
-    deleteAlert,
-    getAlertsByProductId
-};
-
+module.exports = AlertaModel;

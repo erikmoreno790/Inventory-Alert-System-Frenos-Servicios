@@ -112,6 +112,16 @@ const getCantidadPorCategoria = async (req, res) => {
   }
 };
 
+const getAllMovements = async (req, res) => {
+  try {
+    const movements = await Repuesto.getAllMovements();
+    res.json(movements);
+    console.log(movements); // ✅ ahora sí imprime lo recibido
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener movimientos', details: err.message });
+  }
+};
+
 module.exports = { 
     getAll, 
     getById, 
@@ -120,4 +130,5 @@ module.exports = {
     remove,
 getAll, getById, create, update, remove,
   getBelowStockMin, getByCategoria, getByProveedor, 
-  getDisponibles, getTopMinStock, getValorInventario, getCantidadPorCategoria };
+  getDisponibles, getTopMinStock, getValorInventario, getCantidadPorCategoria, 
+  getAllMovements};

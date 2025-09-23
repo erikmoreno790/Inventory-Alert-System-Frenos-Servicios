@@ -357,5 +357,53 @@ const eliminarCotizacion = async (req, res) => {
 
 };
 
+// Mostrar cantidad de cotizaciones aprobadas
+const contarCotizacionesAprobadas = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM cotizaciones WHERE estatus = 'Aprobada'`
+    );
+    const count = parseInt(result.rows[0].count, 10);
+    res.status(200).json({ aprobadas: count });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error contando cotizaciones aprobadas' });
+  }
+};
 
-module.exports = { crearCotizacion, mostrarCotizaciones, verCotizacion, actualizarCotizacion, eliminarCotizacion };
+// Mostar distribución de órdenes por mecánico (para gráficos)
+const distribucionPorMecanico = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT nombre_mecanico, COUNT(*) AS total
+        FROM cotizaciones
+        GROUP BY nombre_mecanico`
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error obteniendo distribución por mecánico' });
+  }
+};
+
+// Mostrar cotizaciones por semana (para gráficos)
+const cotizacionesPorSemana = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT DATE_TRUNC('week', fecha) AS semana, COUNT(*) AS total
+        FROM cotizaciones
+        GROUP BY semana
+        ORDER BY semana DESC
+        LIMIT 10`
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error obteniendo cotizaciones por semana' });
+  }
+};
+
+
+
+module.exports = { crearCotizacion, mostrarCotizaciones, verCotizacion, actualizarCotizacion, eliminarCotizacion, contarCotizacionesAprobadas, distribucionPorMecanico, cotizacionesPorSemana };

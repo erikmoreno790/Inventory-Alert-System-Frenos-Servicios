@@ -4,6 +4,10 @@ import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import api from "../api";
 
+// 🔹 Importaciones para alertas
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const EntryFormPage = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -13,11 +17,12 @@ const EntryFormPage = () => {
   const [form, setForm] = useState({
     repuesto_id: "",
     tipo_salida: "",
-    fecha:"",
+    fecha: "",
     cantidad: "",
     destino: "",
-    factura:"",
+    factura: "",
     observacion: "",
+    fecha: "",
   });
 
   const toggleSidebar = () => {
@@ -55,9 +60,28 @@ const EntryFormPage = () => {
 
     try {
       await api.post("/salidas", form, config);
-      navigate("/salidas"); // redirige al listado de salidas
+
+      // ✅ Mostrar alerta profesional
+      toast.success("✅ Salida registrada exitosamente", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+
+      // Redirigir después de un corto delay
+      setTimeout(() => navigate("/historial-repuestos/entradas-salidas"), 1500);
     } catch (err) {
       console.error("Error registrando salida:", err.response?.data || err.message);
+
+      toast.error("❌ Error al registrar la salida", {
+        position: "top-right",
+        autoClose: 4000,
+        theme: "colored",
+      });
     }
   };
 
@@ -82,6 +106,18 @@ const EntryFormPage = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-6"
           >
+             {/*Fecha*/}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Fecha de entrada</label>
+              <input
+                type="date"
+                name="fecha"
+                value={form.fecha}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Repuesto */}
             <div className="md:col-span-2">
               <label className="block text-gray-700 mb-2 font-medium">Repuesto *</label>
@@ -115,22 +151,23 @@ const EntryFormPage = () => {
               />
             </div>
 
-            {/*Tipo de salida*/}
+            {/* Tipo de salida */}
             <div>
-          <label className="block text-gray-700 mb-2 font-medium">Tipo de salida</label>
-          <select
-            name="tipo"
-            value={form.tipo_salida}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="compra">Venta</option>
-            <option value="devolucion">Devolución</option>
-            <option value="ajuste">Ajuste</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
+              <label className="block text-gray-700 mb-2 font-medium">Tipo de salida</label>
+              <select
+                name="tipo_salida"
+                value={form.tipo_salida}
+                onChange={handleChange}
+                required
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Seleccione un tipo</option>
+                <option value="venta">Venta</option>
+                <option value="devolucion">Devolución</option>
+                <option value="ajuste">Ajuste</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
 
             {/* Destino */}
             <div>
@@ -175,20 +212,19 @@ const EntryFormPage = () => {
             <div className="md:col-span-2 flex justify-end">
               <button
                 type="submit"
-                className="bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition"
+                className="bg-red-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition"
               >
-                Guardar Entrada
+                Registrar Salida
               </button>
             </div>
           </form>
         </main>
       </div>
+
+      {/* 🔹 Contenedor de notificaciones */}
+      <ToastContainer />
     </div>
   );
 };
 
 export default EntryFormPage;
-
-
-
-

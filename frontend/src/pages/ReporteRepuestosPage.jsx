@@ -12,6 +12,7 @@ const ReporteRepuestosPage = () => {
   const [fechaFin, setFechaFin] = useState("");
   const [reporte, setReporte] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState(""); // 🔍 búsqueda
 
   const fetchReporte = async () => {
     if (!fechaInicio || !fechaFin) {
@@ -32,6 +33,21 @@ const ReporteRepuestosPage = () => {
       setLoading(false);
     }
   };
+
+  // 🔍 Filtrado dinámico
+  const filteredData = reporte.filter((item) =>
+    item.descripcion.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // 📊 Totales de los resultados filtrados
+  const totalCantidad = filteredData.reduce(
+    (acc, item) => acc + Number(item.total_cantidad || 0),
+    0
+  );
+  const totalValor = filteredData.reduce(
+    (acc, item) => acc + Number(item.total_valor || 0),
+    0
+  );
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -73,6 +89,32 @@ const ReporteRepuestosPage = () => {
             </button>
           </div>
 
+          {/* 🔍 Barra de búsqueda */}
+          <div className="bg-white p-4 rounded-lg shadow mb-6">
+            <label className="block text-sm font-medium text-gray-700">Buscar repuesto</label>
+            <input
+              type="text"
+              placeholder="Ej: Bandas de freno pegadas"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border rounded px-3 py-2 mt-1 w-full"
+            />
+
+            {/* 📊 Resumen resultados */}
+            <div className="mt-3 text-sm text-gray-700">
+              <p>
+                Resultados encontrados: <strong>{filteredData.length}</strong>
+              </p>
+              <p>
+                Total cantidad: <strong>{totalCantidad}</strong>
+              </p>
+              <p>
+                Valor total:{" "}
+                <strong>${totalValor.toLocaleString("es-CO")}</strong>
+              </p>
+            </div>
+          </div>
+
           {/* Tabla */}
           <div className="bg-white rounded-lg shadow overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -84,23 +126,22 @@ const ReporteRepuestosPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {reporte.length === 0 ? (
+                {filteredData.length === 0 ? (
                   <tr>
                     <td colSpan="3" className="text-center py-4 text-gray-500">
-                      No hay datos para el rango seleccionado.
+                      No hay datos que coincidan con la búsqueda.
                     </td>
                   </tr>
                 ) : (
-                  reporte.map((item, index) => (
-  <tr key={index}>
-    <td className="px-4 py-2">{item.descripcion}</td>
-    <td className="px-4 py-2 text-center">{item.total_cantidad}</td>
-    <td className="px-4 py-2 text-center">
-      ${Number(item.total_valor).toLocaleString("es-CO")}
-    </td>
-  </tr>
-))
-
+                  filteredData.map((item, index) => (
+                    <tr key={index}>
+                      <td className="px-4 py-2">{item.descripcion}</td>
+                      <td className="px-4 py-2 text-center">{item.total_cantidad}</td>
+                      <td className="px-4 py-2 text-center">
+                        ${Number(item.total_valor).toLocaleString("es-CO")}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

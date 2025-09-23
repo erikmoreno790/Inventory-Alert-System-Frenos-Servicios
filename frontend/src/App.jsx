@@ -133,10 +133,18 @@ function App() {
           }
         />
         <Route
-          path="/reporte-repuestos-usados"
+          path="/historial-repuestos/entradas-salidas"
           element={
             <PrivateRoute>
-              <ReporteRepuestosPage/>
+              <MovementsHistoryPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/reportes/repuestos-usados"
+          element={
+            <PrivateRoute>
+              <ReporteRepuestosPage />
             </PrivateRoute>
           }
         />

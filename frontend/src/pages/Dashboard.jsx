@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Boxes, AlertTriangle, PlusCircle } from "lucide-react";
+import { Bell, Boxes, AlertTriangle, PlusCircle, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
@@ -7,9 +7,7 @@ import api from "../api";
 
 const DashboardPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
- // const [totalProductos, setTotalProductos] = useState(0);
   const [totalCotizaciones, setTotalCotizaciones] = useState(0);
-  //const [bajoStock, setBajoStock] = useState(0);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,19 +26,15 @@ const DashboardPage = () => {
           },
         };
 
-        const [ alertasRes, cotizacionesRes] = await Promise.all([
-          //api.get("/products", config),
-          api.get("/alerts", config), // Ajusta si tu ruta es diferente
-          api.get("/cotizaciones", config), // Ajusta si tu ruta es diferente
+        const [alertasRes, cotizacionesRes] = await Promise.all([
+          api.get("/alerts/products/:id", config), 
+          api.get("/cotizaciones", config),
         ]);
 
-        //const productos = productosRes.data;
         const alertasActivas = alertasRes.data;
         const cotizaciones = cotizacionesRes.data;
 
-        //setTotalProductos(productos.length);
         setTotalCotizaciones(cotizaciones.length);
-        //setBajoStock(productos.filter((p) => p.stock < p.stock_minimo).length);
         setAlertas(alertasActivas.slice(0, 5)); // últimas 5 alertas
       } catch (error) {
         console.error(
@@ -60,9 +54,7 @@ const DashboardPage = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
-        className={`flex-1 ${
-          sidebarOpen ? "ml-64" : ""
-        } transition-all duration-300`}
+        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={toggleSidebar} />
 
@@ -81,22 +73,6 @@ const DashboardPage = () => {
                   </div>
                 </div>
 
-                {/*<div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
-                  <Boxes className="text-blue-600" />
-                  <div>
-                    <p className="text-gray-600 text-sm">Total Repuestos</p>
-                    <p className="text-xl font-bold">{totalProductos}</p>
-                  </div>
-                </div>*/}
-
-                {/*<div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
-                  <AlertTriangle className="text-yellow-600" />
-                  <div>
-                    <p className="text-gray-600 text-sm">Bajo Stock</p>
-                    <p className="text-xl font-bold">{bajoStock}</p>
-                  </div>
-                </div>*/}
-
                 <div className="bg-white p-4 rounded-lg shadow flex items-center gap-4">
                   <Bell className="text-red-600" />
                   <div>
@@ -110,23 +86,34 @@ const DashboardPage = () => {
               <div className="bg-white p-4 rounded-lg shadow mb-6">
                 <h2 className="text-lg font-semibold mb-4">Últimas Alertas</h2>
                 {alertas.length > 0 ? (
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {alertas.map((alerta, index) => (
                       <li
                         key={index}
-                        className="text-sm text-gray-700 border-b pb-2"
+                        className="flex items-start gap-3 border-b pb-2 last:border-none"
                       >
-                        🔔{" "}
-                        {alerta.mensaje ||
-                          alerta.descripcion ||
-                          "Alerta sin mensaje"}
+                        <AlertTriangle className="text-yellow-600 mt-1" size={18} />
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {alerta.repuesto_nombre || "Repuesto no identificado"}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {alerta.mensaje || alerta.descripcion || "Alerta sin mensaje"}
+                          </p>
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                            <Clock size={12} />{" "}
+                            {new Date(alerta.fecha).toLocaleDateString("es-CO", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">
-                    No hay alertas recientes.
-                  </p>
+                  <p className="text-sm text-gray-500">No hay alertas recientes.</p>
                 )}
               </div>
 

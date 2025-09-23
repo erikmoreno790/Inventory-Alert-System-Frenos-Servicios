@@ -12,13 +12,15 @@ const entradaController = {
   },
 
   async getAll(req, res) {
-    try {
-      const entradas = await EntradaModel.findAll();
-      res.json(entradas);
-    } catch (err) {
-      res.status(500).json({ error: "Error al obtener entradas" });
-    }
-  },
+  try {
+    const entradas = await EntradaModel.findAll();
+    res.json(entradas);
+    console.log(entradas); // ✅ ahora sí imprime lo recibido
+  } catch (err) {
+    console.error("Error en getAll:", err); // ✅ log para debug
+    res.status(500).json({ error: "Error al obtener entradas" });
+  }
+},
 
   async getById(req, res) {
     try {
@@ -27,6 +29,16 @@ const entradaController = {
       res.json(entrada);
     } catch (err) {
       res.status(500).json({ error: "Error al obtener la entrada" });
+    }
+  },
+
+  async update(req, res) {
+    try {
+      const updated = await EntradaModel.update(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: "Entrada no encontrada" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: "Error al actualizar la entrada" });
     }
   },
 

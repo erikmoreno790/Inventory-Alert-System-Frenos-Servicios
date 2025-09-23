@@ -51,6 +51,36 @@ const cotizacionController = {
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
+    },
+
+    // Mostrar cantidad de cotizaciones aprobadas
+    async countApproved(req, res) {
+        try {
+            const count = await Cotizacion.contarCotizacionesAprobadas('aprobada');
+            res.json({ count });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    },
+
+    // Mostar distribución de órdenes por mecánico (para gráficos)
+    async distributionByMechanic(req, res) {
+        try {
+            const distribution = await Cotizacion.distribucionPorMecanico();
+            res.json(distribution);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    },
+
+    // Mostrar cotizaciones por semana (para gráficos)
+    async countByMonth(req, res) {
+        try {
+            const counts = await Cotizacion.cotizacionesPorSemana();
+            res.json(counts);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
     }
 };
 

@@ -53,9 +53,14 @@ const Sidebar = () => {
       label: "Salidas",
       icon: <ClipboardList size={18} />,
     },
-    { to: "/reporte-repuestos-usados", 
+    { to: "/reportes/repuestos-usados", 
       label: "Reportes", 
       icon: <FileText size={18} /> 
+    },
+    {
+      to: "/historial-repuestos/entradas-salidas",
+      label: "Historial Entradas/Salidas",
+      icon: <ClipboardList size={18} />,
     },
     { to: "/alertas", 
       label: "Alertas", 

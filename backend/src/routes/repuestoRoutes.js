@@ -4,7 +4,11 @@ const repuestoController = require('../controllers/repuestoController');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 
 // Todas requieren autenticación
-router.use(authenticate);
+//router.use(authenticate);
+
+router.get('/movimientos', repuestoController.getAllMovements);
+
+
 
 router.get('/', repuestoController.getAll);
 router.get('/:id', repuestoController.getById);

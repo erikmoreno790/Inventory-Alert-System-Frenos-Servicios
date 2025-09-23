@@ -4,6 +4,10 @@ import Sidebar from "../components/Sidebar";
 import TopNavbar from "../components/TopNavbar";
 import api from "../api";
 
+// 🔹 Importaciones para alertas
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 const EntryFormPage = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -17,6 +21,7 @@ const EntryFormPage = () => {
     proveedor: "",
     factura: "",
     observacion: "",
+    fecha: "",
   });
 
   const toggleSidebar = () => {
@@ -54,9 +59,28 @@ const EntryFormPage = () => {
 
     try {
       await api.post("/entradas", form, config);
-      navigate("/entradas"); // redirige al listado de entradas
+
+      // ✅ Mostrar alerta profesional
+      toast.success("✅ Entrada registrada exitosamente", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+
+      // Redirigir después de un corto delay
+      setTimeout(() => navigate("/historial-repuestos/entradas-salidas"), 1500);
     } catch (err) {
       console.error("Error registrando entrada:", err.response?.data || err.message);
+
+      toast.error("❌ Error al registrar la entrada", {
+        position: "top-right",
+        autoClose: 4000,
+        theme: "colored",
+      });
     }
   };
 
@@ -81,6 +105,18 @@ const EntryFormPage = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-6"
           >
+             {/*Fecha*/}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Fecha de entrada</label>
+              <input
+                type="date"
+                name="fecha"
+                value={form.fecha}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Repuesto */}
             <div className="md:col-span-2">
               <label className="block text-gray-700 mb-2 font-medium">Repuesto *</label>
@@ -114,22 +150,23 @@ const EntryFormPage = () => {
               />
             </div>
 
-            {/*Tipo de entrada*/}
+            {/* Tipo de entrada */}
             <div>
-          <label className="block text-gray-700 mb-2 font-medium">Tipo de entrada</label>
-          <select
-            name="tipo"
-            value={form.tipo_entrada}
-            onChange={handleChange}
-            required
-            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="compra">Compra</option>
-            <option value="devolucion">Devolución</option>
-            <option value="ajuste">Ajuste</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
+              <label className="block text-gray-700 mb-2 font-medium">Tipo de entrada</label>
+              <select
+                name="tipo_entrada"
+                value={form.tipo_entrada}
+                onChange={handleChange}
+                required
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Seleccione un tipo</option>
+                <option value="compra">Compra</option>
+                <option value="devolucion">Devolución</option>
+                <option value="ajuste">Ajuste</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
 
             {/* Proveedor */}
             <div>
@@ -176,12 +213,15 @@ const EntryFormPage = () => {
                 type="submit"
                 className="bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700 transition"
               >
-                Guardar Entrada
+                Registrar Entrada
               </button>
             </div>
           </form>
         </main>
       </div>
+
+      {/* 🔹 Contenedor de notificaciones */}
+      <ToastContainer />
     </div>
   );
 };

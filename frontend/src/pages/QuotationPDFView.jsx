@@ -157,6 +157,9 @@ const formatCurrency = (value) => {
             </div>
             <div>
               <p>
+                <strong>Mecanico:</strong> {quotation.nombre_mecanico}
+              </p>
+              <p>
                 <strong>Modelo:</strong> {quotation.modelo}
               </p>
               <p>

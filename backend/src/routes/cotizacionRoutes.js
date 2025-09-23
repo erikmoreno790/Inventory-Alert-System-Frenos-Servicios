@@ -25,5 +25,7 @@ router.get('/', authorize("admin", "user"), cotizacionModel.mostrarCotizaciones)
 router.get('/:id', authorize("admin", "user"), cotizacionModel.verCotizacion);
 router.put('/:id', authorize("admin", "user"), cotizacionModel.actualizarCotizacion);
 router.delete('/:id', authorize("admin", "user"), cotizacionModel.eliminarCotizacion);
+router.get('/approved/count', authorize("admin", "user"), cotizacionModel.contarCotizacionesAprobadas);
+
 
 module.exports = router;

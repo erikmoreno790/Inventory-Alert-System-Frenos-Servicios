@@ -15,6 +15,7 @@ const salidaController = {
     try {
       const salidas = await SalidaModel.findAll();
       res.json(salidas);
+      console.log(salidas); // ✅ ahora sí imprime lo recibido
     } catch (err) {
       res.status(500).json({ error: "Error al obtener salidas" });
     }
@@ -30,9 +31,19 @@ const salidaController = {
     }
   },
 
+  async update(req, res) {
+    try {
+      const salida = await SalidaModel.update(req.params.id, req.body);
+      if (!salida) return res.status(404).json({ error: "Salida no encontrada" });
+      res.json(salida);
+    } catch (err) {
+      res.status(500).json({ error: "Error al actualizar la salida" });
+    }
+  },
+
   async delete(req, res) {
     try {
-      const deleted = await SalidaModel.delete(req.params.id);
+      const deleted = await SalidaModel.remove(req.params.id);
       if (!deleted) return res.status(404).json({ error: "Salida no encontrada" });
       res.json({ message: "Salida eliminada y stock revertido", deleted });
     } catch (err) {

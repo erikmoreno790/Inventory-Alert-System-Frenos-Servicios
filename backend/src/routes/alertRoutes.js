@@ -6,7 +6,9 @@ const { authenticate, authorize } = require('../middleware/authMiddleware');
 router.use(authenticate);
 // Acceso según roles
 
-router.get('/products/:id', authorize('admin', 'inventario'), alertController.getAlertByProductId);
-router.get('/', authorize('admin', 'inventario'), alertController.getAll);
+router.get('/products/:id', authorize('admin', 'inventario'), alertController.getAll);
+router.get('/', authorize('admin', 'inventario'), alertController.getById);
+router.put('/:id/read', authorize('admin', 'inventario'), alertController.markAsRead);
+router.delete('/:id', authorize('admin', 'inventario'), alertController.delete);
 
 module.exports = router;
