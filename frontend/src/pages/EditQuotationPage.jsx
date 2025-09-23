@@ -8,6 +8,7 @@ const EditarCotizacionPage = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // id de la cotización a editar
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [newImages, setNewImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
@@ -71,6 +72,58 @@ const EditarCotizacionPage = () => {
     setCotizacion({ ...cotizacion, [e.target.name]: e.target.value });
   };
 
+  // 🔹 Manejar selección de imágenes nuevas
+  const handleImageChange = (e) => {
+    setNewImages([...newImages, ...e.target.files]);
+  };
+
+  // 🔹 Eliminar imagen existente
+  const handleDeleteImage = async (imgUrl) => {
+    if (!window.confirm("¿Eliminar esta imagen?")) return;
+
+    try {
+      await api.delete(`/cotizaciones/${id}/imagenes`, {
+        ...config,
+        data: { imagen_url: imgUrl },
+      });
+      setCotizacion({
+        ...cotizacion,
+        imagenes: cotizacion.imagenes.filter((img) => img.url !== imgUrl),
+      });
+      alert("Imagen eliminada");
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar imagen");
+    }
+  };
+
+  // 🔹 Subir imágenes nuevas
+  const handleUploadImages = async () => {
+    if (newImages.length === 0) {
+      alert("Selecciona imágenes primero");
+      return;
+    }
+
+    const formData = new FormData();
+    newImages.forEach((img) => formData.append("imagenes", img));
+
+    try {
+      await api.post(`/cotizaciones/${id}/imagenes`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      alert("Imágenes subidas correctamente");
+      setNewImages([]);
+      // Refrescar cotización
+      const { data } = await api.get(`/cotizaciones/${id}`, config);
+      setCotizacion(data);
+    } catch (error) {
+      console.error(error);
+      alert("Error al subir imágenes");
+    }
+  };
   // 🔹 Cambiar valores de ítems
   const handleItemChange = (index, field, value) => {
     const newItems = [...cotizacion.items];
@@ -131,7 +184,9 @@ const EditarCotizacionPage = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div
-        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main>
@@ -223,23 +278,62 @@ const EditarCotizacionPage = () => {
               rows={3}
             />
 
-            {/* Imágenes */}
+            {/* 🔹 Imágenes existentes */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">Imágenes</h3>
+              <h3 className="text-lg font-semibold mb-2">Imágenes Asociadas</h3>
               {cotizacion.imagenes && cotizacion.imagenes.length > 0 ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {cotizacion.imagenes.map((img, idx) => (
-                    <img
+                    <div
                       key={idx}
-                      src={img.imagen_url}
-                      alt={`Imagen ${idx + 1}`}
-                      className="w-full h-32 object-cover border rounded"
-                    />
+                      className="relative border rounded-lg overflow-hidden group"
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Imagen ${idx + 1}`}
+                        className="w-full h-32 object-cover"
+                      />
+                      <button
+                        onClick={() => handleDeleteImage(img.url)}
+                        className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500">No hay imágenes para esta cotización</p>
+                <p className="text-gray-500">
+                  No hay imágenes para esta cotización
+                </p>
               )}
+            </div>
+
+            {/* 🔹 Subir nuevas imágenes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Agregar Imágenes</h3>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="border p-2 mb-3"
+              />
+              {newImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {Array.from(newImages).map((file, idx) => (
+                    <div key={idx} className="text-sm text-gray-600">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={handleUploadImages}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Subir Imágenes
+              </button>
             </div>
 
             {/* Items */}
