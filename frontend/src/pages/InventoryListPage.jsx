@@ -20,7 +20,7 @@ const InventoryListPage = () => {
   useEffect(() => {
     const fetchInventario = async () => {
       try {
-        const response = await api.get("/products", {
+        const response = await api.get("/repuestos", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -105,7 +105,7 @@ const InventoryListPage = () => {
                               : ""
                           }`}
                         >
-                          {item.stock_actual}
+                          {item.stock}
                         </td>
                         <td className="px-4 py-2 text-center">
                           {item.stock_minimo}

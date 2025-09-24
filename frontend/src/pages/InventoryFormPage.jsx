@@ -13,11 +13,17 @@ const InventoryFormPage = () => {
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
-    stock_actual: "",
+    categoria: "",
+    marca: "",
+    compatibilidad: "",
+    proveedor: "",
+    stock: "",
     stock_minimo: "",
-    precio_costo: "",
-    ubicacion: "",
+    precio_unitario: "",
+    unidad_medida: "unidad",
+    estado: "disponible",
     codigo: "",
+    ubicacion: "",
   });
 
   const toggleSidebar = () => {
@@ -31,15 +37,21 @@ const InventoryFormPage = () => {
     const fetchProducto = async () => {
       try {
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await api.get(`products/${id}`, config);
+        const res = await api.get(`repuestos/${id}`, config);
         setForm({
           nombre: res.data.nombre || "",
           descripcion: res.data.descripcion || "",
-          stock_actual: res.data.stock_actual || "",
+          categoria: res.data.categoria || "",
+          marca: res.data.marca || "",
+          compatibilidad: res.data.compatibilidad || "",
+          proveedor: res.data.proveedor || "",
+          stock: res.data.stock || "",
           stock_minimo: res.data.stock_minimo || "",
-          precio_costo: res.data.precio_costo || "",
-          ubicacion: res.data.ubicacion || "",
+          precio_unitario: res.data.precio_unitario || "",
+          unidad_medida: res.data.unidad_medida || "unidad",
+          estado: res.data.estado || "disponible",
           codigo: res.data.codigo || "",
+          ubicacion: res.data.ubicacion || "",
         });
       } catch (err) {
         console.error("Error cargando producto:", err);
@@ -66,9 +78,9 @@ const InventoryFormPage = () => {
 
     try {
       if (id) {
-        await api.put(`/products/${id}`, form, config);
+        await api.put(`/repuestos/${id}`, form, config);
       } else {
-        await api.post("/products", form, config);
+        await api.post("/repuestos", form, config);
       }
       navigate("/inventario");
     } catch (err) {
@@ -124,25 +136,63 @@ const InventoryFormPage = () => {
               />
             </div>
 
-            {/* Descripción */}
-            <div className="md:col-span-2">
-              <label className="block text-gray-700 mb-2 font-medium">Descripción</label>
-              <textarea
-                name="descripcion"
-                value={form.descripcion}
+            {/* Categoría */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Categoría *</label>
+              <input
+                type="text"
+                name="categoria"
+                value={form.categoria}
                 onChange={handleChange}
-                rows={3}
+                required
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Stock actual */}
+            {/* Marca */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Marca</label>
+              <input
+                type="text"
+                name="marca"
+                value={form.marca}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Compatibilidad */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Compatibilidad</label>
+              <input
+                type="text"
+                name="compatibilidad"
+                value={form.compatibilidad}
+                onChange={handleChange}
+                placeholder="Ej: Toyota Hilux 2015-2020"
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Proveedor */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Proveedor</label>
+              <input
+                type="text"
+                name="proveedor"
+                value={form.proveedor}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Stock */}
             <div>
               <label className="block text-gray-700 mb-2 font-medium">Stock actual *</label>
               <input
                 type="number"
-                name="stock_actual"
-                value={form.stock_actual}
+                name="stock"
+                value={form.stock}
                 onChange={handleChange}
                 required
                 min={0}
@@ -164,19 +214,50 @@ const InventoryFormPage = () => {
               />
             </div>
 
-            {/* Precio */}
+            {/* Precio unitario */}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Precio de costo *</label>
+              <label className="block text-gray-700 mb-2 font-medium">Precio unitario *</label>
               <input
                 type="number"
-                name="precio_costo"
-                value={form.precio_costo}
+                name="precio_unitario"
+                value={form.precio_unitario}
                 onChange={handleChange}
                 required
                 min={0}
                 step="0.01"
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            {/* Unidad de medida */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Unidad de medida</label>
+              <select
+                name="unidad_medida"
+                value={form.unidad_medida}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="unidad">Unidad</option>
+                <option value="par">Par</option>
+                <option value="juego">Juego</option>
+                <option value="kit">Kit</option>
+              </select>
+            </div>
+
+            {/* Estado */}
+            <div>
+              <label className="block text-gray-700 mb-2 font-medium">Estado</label>
+              <select
+                name="estado"
+                value={form.estado}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="disponible">Disponible</option>
+                <option value="agotado">Agotado</option>
+                <option value="descontinuado">Descontinuado</option>
+              </select>
             </div>
 
             {/* Ubicación */}
@@ -187,6 +268,7 @@ const InventoryFormPage = () => {
                 name="ubicacion"
                 value={form.ubicacion}
                 onChange={handleChange}
+                placeholder="Ej: Estante A3"
                 className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
               />
             </div>

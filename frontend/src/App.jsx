@@ -13,6 +13,7 @@ import QuotationPDFView from "./pages/QuotationPDFView";
 import QuotationsHistoryPage from "./pages/QuotationsHistoryPage";
 import QuotationDetailPage from "./pages/QuotationDetailPage";
 import EditQuotationPage from "./pages/EditQuotationPage";
+import ReporteRepuestosPage from "./pages/ReporteRepuestosPage";
 // import AlertSettingsPage from './pages/AlertSettingsPage'
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -128,6 +129,22 @@ function App() {
           element={
             <PrivateRoute>
               <QuotationsHistoryPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/historial-repuestos/entradas-salidas"
+          element={
+            <PrivateRoute>
+              <MovementsHistoryPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/reportes/repuestos-usados"
+          element={
+            <PrivateRoute>
+              <ReporteRepuestosPage />
             </PrivateRoute>
           }
         />

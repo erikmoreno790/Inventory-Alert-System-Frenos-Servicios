@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const cotizacionModel = require('../models/CotizacionModel');
+const cotizacionModel = require('../models/cotizacionModel');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const multer = require("multer");
 const path = require("path");
@@ -25,5 +25,7 @@ router.get('/', authorize("admin", "user"), cotizacionModel.mostrarCotizaciones)
 router.get('/:id', authorize("admin", "user"), cotizacionModel.verCotizacion);
 router.put('/:id', authorize("admin", "user"), cotizacionModel.actualizarCotizacion);
 router.delete('/:id', authorize("admin", "user"), cotizacionModel.eliminarCotizacion);
+router.get('/approved/count', authorize("admin", "user"), cotizacionModel.contarCotizacionesAprobadas);
+
 
 module.exports = router;

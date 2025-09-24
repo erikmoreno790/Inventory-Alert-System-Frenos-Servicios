@@ -49,6 +49,33 @@ const NuevaCotizacionPage = () => {
     setCotizacion({ ...cotizacion, [e.target.name]: e.target.value });
   };
 
+  const opcionesDescripcion = [
+    "Axiales de direccion e.o",
+  "Campana tras. rectificada",
+  "Correa accesorio",
+  "Banda de freno tras. pegada",
+  "Balineras soporte amortiguador del.",
+  "Buje barra estab. del.",
+  "Buje tijera puño e.o",
+  "Buje interno cuña e.o",
+  "Buje tijera parte delantera",
+  "Disco del. y tras. rectificado",
+  "Guardapolvo eje lado rueda con grasa y abrazada",
+  "Guardapolvo pasador mordaza izq.",
+  "Juego de pastillas del. e.o en ceramica",
+  "Juego de pastillas tras. e.o en ceramica",
+  "Kit reparacion mordaza con mantenimiento",
+  "Mano de obra",
+  "Pote de liquido sintético y cte",
+  "Prensa bujes",
+  "Rotula inferior e.o",
+  "Soporte amortiguador del. e.o",
+  "Soporte motor central e.o",
+  "Soporte motor derecho e.o",
+  "Soporte motor izquierdo e.o",
+  "Tijera del. e.o"
+];
+
   // 🔹 Cambiar valores de ítems
   const handleItemChange = (index, field, value) => {
     const newItems = [...cotizacion.items];
@@ -277,6 +304,7 @@ const NuevaCotizacionPage = () => {
                   <tr key={idx}>
                     <td className="border p-2">
                       <input
+                        list="opcionesDescripcion"
                         value={item.descripcion}
                         onChange={(e) =>
                           handleItemChange(idx, "descripcion", e.target.value)
@@ -323,6 +351,13 @@ const NuevaCotizacionPage = () => {
                 ))}
               </tbody>
             </table>
+
+            {/* Datalist con sugerencias */}
+            <datalist id="opcionesDescripcion">
+              {opcionesDescripcion.map((op, i) => (
+                <option key={i} value={op} />
+              ))}
+            </datalist>
 
             {/* Descuento */}
             <div className="mb-4 flex items-center gap-4">

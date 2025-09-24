@@ -8,6 +8,7 @@ const EditarCotizacionPage = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // id de la cotización a editar
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // 🔹 Nuevo estado para imágenes a subir
   const [newImages, setNewImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -124,6 +125,7 @@ const EditarCotizacionPage = () => {
       alert("Error al subir imágenes");
     }
   };
+
   // 🔹 Cambiar valores de ítems
   const handleItemChange = (index, field, value) => {
     const newItems = [...cotizacion.items];
@@ -336,8 +338,118 @@ const EditarCotizacionPage = () => {
               </button>
             </div>
 
+            {/* 🔹 Subir nuevas imágenes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Agregar Imágenes</h3>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="border p-2 mb-3"
+              />
+              {newImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {Array.from(newImages).map((file, idx) => (
+                    <div key={idx} className="text-sm text-gray-600">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={handleUploadImages}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Subir Imágenes
+              </button>
+            </div>
+
             {/* Items */}
-            {/* ... resto de la tabla y totales igual que antes ... */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">
+                Ítems de la Cotización
+              </h3>
+
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="bg-green-500 text-white px-3 py-1 rounded"
+                >
+                  + Agregar Ítem
+                </button>
+              </div>
+
+              <table className="w-full border mb-4">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">Descripción</th>
+                    <th className="border p-2">Cantidad</th>
+                    <th className="border p-2">Precio</th>
+                    <th className="border p-2">Subtotal</th>
+                    <th className="border p-2">Eliminar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="border p-2">
+                        <input
+                          value={item.descripcion}
+                          onChange={(e) =>
+                            handleItemChange(idx, "descripcion", e.target.value)
+                          }
+                          className="border p-1 w-full"
+                          placeholder="Descripción"
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.cantidad}
+                          onChange={(e) =>
+                            handleItemChange(idx, "cantidad", e.target.value)
+                          }
+                          className="border p-1 w-16 text-right"
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.precio_unitario}
+                          onChange={(e) =>
+                            handleItemChange(
+                              idx,
+                              "precio_unitario",
+                              e.target.value
+                            )
+                          }
+                          className="border p-1 w-24 text-right"
+                        />
+                      </td>
+                      <td className="border p-2 text-right">
+                        {item.sub_total.toLocaleString("es-CO", {
+                          style: "currency",
+                          currency: "COP",
+                        })}
+                      </td>
+                      <td className="border p-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(idx)}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          X
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Totales */}
             <div className="text-right mb-6 border-t pt-4">
@@ -348,15 +460,31 @@ const EditarCotizacionPage = () => {
                   currency: "COP",
                 })}
               </p>
+
+              {/* 🔹 Campo editable para descuento */}
+              <div className="flex justify-end items-center gap-2 my-2">
+                <label className="font-medium">Descuento (%):</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  name="porcentaje_descuento"
+                  value={cotizacion.porcentaje_descuento}
+                  onChange={handleChange}
+                  className="border p-1 w-20 text-right"
+                />
+              </div>
+
               {descuento > 0 && (
                 <p className="text-yellow-600">
-                  Descuento: -{" "}
+                  Descuento aplicado: -{" "}
                   {descuento.toLocaleString("es-CO", {
                     style: "currency",
                     currency: "COP",
                   })}
                 </p>
               )}
+
               <p className="font-bold text-2xl text-green-700">
                 Total a pagar:{" "}
                 {total.toLocaleString("es-CO", {

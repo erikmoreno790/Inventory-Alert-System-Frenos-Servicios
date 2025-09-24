@@ -1,61 +1,58 @@
-const alertsModel = require('../models/alertModel');
+const AlertaModel = require('../models/alertModel');
 
-const getAlertByProductId = async (req, res) => {
+const AlertaController = {
+  // Obtener todas las alertas
+  async getAll(req, res) {
     try {
-        const alert = await alertsModel.getAlertsByProductId(req.params.id);
-        if (!alert) return res.status(404).json({ message: 'Alerta no encontrada' });
-        res.json(alert);
+      const alertas = await AlertaModel.findAll();
+      res.json(alertas);
     } catch (error) {
-        console.error('Error al obtener alerta:', error);
-        res.status(500).json({ message: 'Error al obtener alerta' });
+      console.error('Error al obtener alertas:', error);
+      res.status(500).json({ error: 'Error al obtener alertas' });
     }
-}
+  },
 
-const getAll = async (req, res) => {
+  // Obtener una alerta específica
+  async getById(req, res) {
     try {
-        const alerts = await alertsModel.getAllAlerts();
-        res.json(alerts);
+      const alerta = await AlertaModel.findById(req.params.id);
+      if (!alerta) {
+        return res.status(404).json({ error: 'Alerta no encontrada' });
+      }
+      res.json(alerta);
     } catch (error) {
-        console.error('Error al obtener alertas:', error);
-        res.status(500).json({ message: 'Error al obtener alertas' });
+      console.error('Error al obtener alerta:', error);
+      res.status(500).json({ error: 'Error al obtener alerta' });
     }
-}
+  },
 
-const create = async (req, res) => {
+  // Marcar como leída
+  async markAsRead(req, res) {
     try {
-        const alert = await alertsModel.createAlert(req.body);
-        res.status(201).json(alert);
+      const alerta = await AlertaModel.markAsRead(req.params.id);
+      if (!alerta) {
+        return res.status(404).json({ error: 'Alerta no encontrada' });
+      }
+      res.json(alerta);
     } catch (error) {
-        console.error('Error al crear alerta:', error);
-        res.status(500).json({ message: 'Error al crear alerta' });
+      console.error('Error al marcar alerta como leída:', error);
+      res.status(500).json({ error: 'Error al marcar alerta' });
     }
+  },
+
+  // Eliminar alerta
+  async delete(req, res) {
+    try {
+      const alerta = await AlertaModel.delete(req.params.id);
+      if (!alerta) {
+        return res.status(404).json({ error: 'Alerta no encontrada' });
+      }
+      res.json({ mensaje: 'Alerta eliminada', alerta });
+    } catch (error) {
+      console.error('Error al eliminar alerta:', error);
+      res.status(500).json({ error: 'Error al eliminar alerta' });
+    }
+  }
 };
 
-const update = async (req, res) => {
-    try {
-        const updatedAlert = await alertsModel.updateAlert(req.params.id, req.body);
-        if (!updatedAlert) return res.status(404).json({ message: 'Alerta no encontrada' });
-        res.json(updatedAlert);
-    } catch (error) {
-        console.error('Error al actualizar alerta:', error);
-        res.status(500).json({ message: 'Error al actualizar alerta' });
-    }
-};
-
-const remove = async (req, res) => {
-    try {
-        await alertsModel.deleteAlert(req.params.id);
-        res.json({ message: 'Alerta eliminada' });
-    } catch (error) {
-        console.error('Error al eliminar alerta:', error);
-        res.status(500).json({ message: 'Error al eliminar alerta' });
-    }
-};
-
-module.exports = {
-    getAlertByProductId,
-    getAll,
-    create,
-    update,
-    remove
-};
+module.exports = AlertaController;
