@@ -14,8 +14,8 @@ const QuotationsHistoryPage = () => {
     estatus: "",
     fecha: "",
   });
-  const [currentPage, setCurrentPage] = useState(1); // 🔹 Página actual
-  const itemsPerPage = 8; // 🔹 Mostrar solo 8 cotizaciones
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const navigate = useNavigate();
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -27,7 +27,7 @@ const QuotationsHistoryPage = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const { data } = await api.get("/cotizaciones", config);
 
-      // 🔹 Ordenar por fecha descendente (últimas primero)
+      // Ordenar por fecha descendente
       const sortedData = data.sort(
         (a, b) => new Date(b.fecha) - new Date(a.fecha)
       );
@@ -58,7 +58,7 @@ const QuotationsHistoryPage = () => {
     }
   };
 
-  // 🔹 Filtrar cotizaciones en frontend
+  // 🔹 Filtrar cotizaciones
   const filteredQuotations = quotations.filter((q) => {
     const nombre_cliente = (q.nombre_cliente || "").toLowerCase();
     const placa = (q.placa || "").toLowerCase();
@@ -68,9 +68,7 @@ const QuotationsHistoryPage = () => {
     return (
       nombre_cliente.includes(filters.nombre_cliente.toLowerCase()) &&
       placa.includes(filters.placa.toLowerCase()) &&
-      (filters.estatus
-        ? estatus === filters.estatus.toLowerCase()
-        : true) &&
+      (filters.estatus ? estatus === filters.estatus.toLowerCase() : true) &&
       (filters.fecha ? fecha.startsWith(filters.fecha) : true)
     );
   });
@@ -82,6 +80,55 @@ const QuotationsHistoryPage = () => {
     startIndex,
     startIndex + itemsPerPage
   );
+
+  // 🔹 Función para renderizar paginación truncada
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisible = 5; // máximo de páginas visibles (sin contar extremos)
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      let start = Math.max(2, currentPage - 2);
+      let end = Math.min(totalPages - 1, currentPage + 2);
+
+      if (start > 2) {
+        pages.push("...");
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages - 1) {
+        pages.push("...");
+      }
+
+      pages.push(totalPages);
+    }
+
+    return pages.map((p, idx) =>
+      p === "..." ? (
+        <span key={idx} className="px-3 py-1">
+          ...
+        </span>
+      ) : (
+        <button
+          key={p}
+          onClick={() => setCurrentPage(p)}
+          className={`px-3 py-1 border rounded ${
+            currentPage === p ? "bg-blue-500 text-white" : "bg-white"
+          }`}
+        >
+          {p}
+        </button>
+      )
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -140,7 +187,7 @@ const QuotationsHistoryPage = () => {
             />
           </div>
 
-          {/* Tabla de cotizaciones */}
+          {/* Tabla */}
           <div className="overflow-x-auto">
             <table className="w-full border">
               <thead className="bg-gray-200">
@@ -204,7 +251,7 @@ const QuotationsHistoryPage = () => {
             </table>
           </div>
 
-          {/* 🔹 Paginación */}
+          {/* Paginación truncada */}
           {totalPages > 1 && (
             <div className="flex justify-center mt-4 gap-2">
               <button
@@ -214,19 +261,9 @@ const QuotationsHistoryPage = () => {
               >
                 Anterior
               </button>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage === i + 1
-                      ? "bg-blue-500 text-white"
-                      : "bg-white"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+
+              {renderPagination()}
+
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(currentPage + 1)}
