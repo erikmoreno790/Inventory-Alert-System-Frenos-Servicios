@@ -17,7 +17,6 @@ const EntryFormPage = () => {
   const [form, setForm] = useState({
     repuesto_id: "",
     tipo_salida: "",
-    fecha: "",
     cantidad: "",
     destino: "",
     factura: "",
@@ -75,7 +74,10 @@ const EntryFormPage = () => {
       // Redirigir después de un corto delay
       setTimeout(() => navigate("/historial-repuestos/entradas-salidas"), 1500);
     } catch (err) {
-      console.error("Error registrando salida:", err.response?.data || err.message);
+      console.error(
+        "Error registrando salida:",
+        err.response?.data || err.message
+      );
 
       toast.error("❌ Error al registrar la salida", {
         position: "top-right",
@@ -89,11 +91,17 @@ const EntryFormPage = () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}>
+      <div
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
+      >
         <TopNavbar onToggleSidebar={toggleSidebar} />
         <main className="p-6 max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">Registrar Salida</h2>
+            <h2 className="text-3xl font-bold text-gray-800">
+              Registrar Salida
+            </h2>
             <button
               onClick={() => navigate(-1)}
               className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
@@ -106,9 +114,11 @@ const EntryFormPage = () => {
             onSubmit={handleSubmit}
             className="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-             {/*Fecha*/}
+            {/*Fecha*/}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Fecha de entrada</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Fecha de entrada
+              </label>
               <input
                 type="date"
                 name="fecha"
@@ -120,7 +130,9 @@ const EntryFormPage = () => {
 
             {/* Repuesto */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 mb-2 font-medium">Repuesto *</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Repuesto *
+              </label>
               <select
                 name="repuesto_id"
                 value={form.repuesto_id}
@@ -139,7 +151,9 @@ const EntryFormPage = () => {
 
             {/* Cantidad */}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Cantidad *</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Cantidad *
+              </label>
               <input
                 type="number"
                 name="cantidad"
@@ -153,7 +167,9 @@ const EntryFormPage = () => {
 
             {/* Tipo de salida */}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Tipo de salida</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Tipo de salida
+              </label>
               <select
                 name="tipo_salida"
                 value={form.tipo_salida}
@@ -171,7 +187,9 @@ const EntryFormPage = () => {
 
             {/* Destino */}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Destino</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Destino
+              </label>
               <input
                 type="text"
                 name="destino"
@@ -184,7 +202,9 @@ const EntryFormPage = () => {
 
             {/* Factura */}
             <div>
-              <label className="block text-gray-700 mb-2 font-medium">Factura / Documento</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Factura / Documento
+              </label>
               <input
                 type="text"
                 name="factura"
@@ -197,7 +217,9 @@ const EntryFormPage = () => {
 
             {/* Observación */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 mb-2 font-medium">Observación</label>
+              <label className="block text-gray-700 mb-2 font-medium">
+                Observación
+              </label>
               <textarea
                 name="observacion"
                 value={form.observacion}

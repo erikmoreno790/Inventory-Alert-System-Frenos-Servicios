@@ -3,22 +3,14 @@ require('dotenv').config();
 const bcrypt = require('bcrypt');
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // Necesario para Render
+  },
 });
 
-pool.connect()
-    .then(() => {
-        console.log('✅ Conexión a PostgreSQL exitosa');
-    })
-    .catch((err) => {
-        console.error('❌ Error al conectar a PostgreSQL:', err.message);
-    });
 
-/*(async () => {
+(async () => {
   try {
     const nombre = 'Erik';
     const email = 'admin@gmail.com';
@@ -42,7 +34,7 @@ pool.connect()
   } finally {
     pool.end();
   }
-})();*/
+})();
 
 module.exports = pool;
 

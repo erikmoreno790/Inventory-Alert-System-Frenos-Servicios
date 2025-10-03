@@ -9,7 +9,7 @@ const EditarCotizacionPage = () => {
   const { id } = useParams(); // id de la cotización a editar
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // 🔹 Nuevo estado para imágenes a subir
-const [newImages, setNewImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
@@ -74,57 +74,57 @@ const [newImages, setNewImages] = useState([]);
   };
 
   // 🔹 Manejar selección de imágenes nuevas
-const handleImageChange = (e) => {
-  setNewImages([...newImages, ...e.target.files]);
-};
+  const handleImageChange = (e) => {
+    setNewImages([...newImages, ...e.target.files]);
+  };
 
-// 🔹 Eliminar imagen existente
-const handleDeleteImage = async (imgUrl) => {
-  if (!window.confirm("¿Eliminar esta imagen?")) return;
+  // 🔹 Eliminar imagen existente
+  const handleDeleteImage = async (imgUrl) => {
+    if (!window.confirm("¿Eliminar esta imagen?")) return;
 
-  try {
-    await api.delete(`/cotizaciones/${id}/imagenes`, {
-      ...config,
-      data: { imagen_url: imgUrl },
-    });
-    setCotizacion({
-      ...cotizacion,
-      imagenes: cotizacion.imagenes.filter((img) => img.url !== imgUrl),
-    });
-    alert("Imagen eliminada");
-  } catch (error) {
-    console.error(error);
-    alert("Error al eliminar imagen");
-  }
-};
+    try {
+      await api.delete(`/cotizaciones/${id}/imagenes`, {
+        ...config,
+        data: { imagen_url: imgUrl },
+      });
+      setCotizacion({
+        ...cotizacion,
+        imagenes: cotizacion.imagenes.filter((img) => img.url !== imgUrl),
+      });
+      alert("Imagen eliminada");
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar imagen");
+    }
+  };
 
-// 🔹 Subir imágenes nuevas
-const handleUploadImages = async () => {
-  if (newImages.length === 0) {
-    alert("Selecciona imágenes primero");
-    return;
-  }
+  // 🔹 Subir imágenes nuevas
+  const handleUploadImages = async () => {
+    if (newImages.length === 0) {
+      alert("Selecciona imágenes primero");
+      return;
+    }
 
-  const formData = new FormData();
-  newImages.forEach((img) => formData.append("imagenes", img));
+    const formData = new FormData();
+    newImages.forEach((img) => formData.append("imagenes", img));
 
-  try {
-    await api.post(`/cotizaciones/${id}/imagenes`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    alert("Imágenes subidas correctamente");
-    setNewImages([]);
-    // Refrescar cotización
-    const { data } = await api.get(`/cotizaciones/${id}`, config);
-    setCotizacion(data);
-  } catch (error) {
-    console.error(error);
-    alert("Error al subir imágenes");
-  }
-};
+    try {
+      await api.post(`/cotizaciones/${id}/imagenes`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      alert("Imágenes subidas correctamente");
+      setNewImages([]);
+      // Refrescar cotización
+      const { data } = await api.get(`/cotizaciones/${id}`, config);
+      setCotizacion(data);
+    } catch (error) {
+      console.error(error);
+      alert("Error al subir imágenes");
+    }
+  };
 
   // 🔹 Cambiar valores de ítems
   const handleItemChange = (index, field, value) => {
@@ -186,7 +186,9 @@ const handleUploadImages = async () => {
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div
-        className={`flex-1 ${sidebarOpen ? "ml-64" : ""} transition-all duration-300`}
+        className={`flex-1 ${
+          sidebarOpen ? "ml-64" : ""
+        } transition-all duration-300`}
       >
         <TopNavbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <main>
@@ -278,186 +280,219 @@ const handleUploadImages = async () => {
               rows={3}
             />
 
-           {/* 🔹 Imágenes existentes */}
-<div className="mb-6">
-  <h3 className="text-lg font-semibold mb-2">Imágenes Asociadas</h3>
-  {cotizacion.imagenes && cotizacion.imagenes.length > 0 ? (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {cotizacion.imagenes.map((img, idx) => (
-        <div
-          key={idx}
-          className="relative border rounded-lg overflow-hidden group"
-        >
-          <img
-            src={img.url}
-            alt={`Imagen ${idx + 1}`}
-            className="w-full h-32 object-cover"
-          />
-          <button
-            onClick={() => handleDeleteImage(img.url)}
-            className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-gray-500">No hay imágenes para esta cotización</p>
-  )}
-</div>
+            {/* 🔹 Imágenes existentes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Imágenes Asociadas</h3>
+              {cotizacion.imagenes && cotizacion.imagenes.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {cotizacion.imagenes.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="relative border rounded-lg overflow-hidden group"
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Imagen ${idx + 1}`}
+                        className="w-full h-32 object-cover"
+                      />
+                      <button
+                        onClick={() => handleDeleteImage(img.url)}
+                        className="absolute top-1 right-1 bg-red-600 text-white px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">
+                  No hay imágenes para esta cotización
+                </p>
+              )}
+            </div>
 
-{/* 🔹 Subir nuevas imágenes */}
-<div className="mb-6">
-  <h3 className="text-lg font-semibold mb-2">Agregar Imágenes</h3>
-  <input
-    type="file"
-    multiple
-    accept="image/*"
-    onChange={handleImageChange}
-    className="border p-2 mb-3"
-  />
-  {newImages.length > 0 && (
-    <div className="flex flex-wrap gap-2 mb-3">
-      {Array.from(newImages).map((file, idx) => (
-        <div key={idx} className="text-sm text-gray-600">
-          {file.name}
-        </div>
-      ))}
-    </div>
-  )}
-  <button
-    onClick={handleUploadImages}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
-  >
-    Subir Imágenes
-  </button>
-</div>
+            {/* 🔹 Subir nuevas imágenes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Agregar Imágenes</h3>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="border p-2 mb-3"
+              />
+              {newImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {Array.from(newImages).map((file, idx) => (
+                    <div key={idx} className="text-sm text-gray-600">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={handleUploadImages}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Subir Imágenes
+              </button>
+            </div>
+
+            {/* 🔹 Subir nuevas imágenes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-2">Agregar Imágenes</h3>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="border p-2 mb-3"
+              />
+              {newImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {Array.from(newImages).map((file, idx) => (
+                    <div key={idx} className="text-sm text-gray-600">
+                      {file.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={handleUploadImages}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Subir Imágenes
+              </button>
+            </div>
 
             {/* Items */}
-<div className="mb-6">
-  <h3 className="text-lg font-semibold mb-3">Ítems de la Cotización</h3>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">
+                Ítems de la Cotización
+              </h3>
 
-  <div className="flex gap-2 mb-4">
-    <button
-      type="button"
-      onClick={addItem}
-      className="bg-green-500 text-white px-3 py-1 rounded"
-    >
-      + Agregar Ítem
-    </button>
-  </div>
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="bg-green-500 text-white px-3 py-1 rounded"
+                >
+                  + Agregar Ítem
+                </button>
+              </div>
 
-  <table className="w-full border mb-4">
-    <thead className="bg-gray-200">
-      <tr>
-        <th className="border p-2">Descripción</th>
-        <th className="border p-2">Cantidad</th>
-        <th className="border p-2">Precio</th>
-        <th className="border p-2">Subtotal</th>
-        <th className="border p-2">Eliminar</th>
-      </tr>
-    </thead>
-    <tbody>
-      {items.map((item, idx) => (
-        <tr key={idx}>
-          <td className="border p-2">
-            <input
-              value={item.descripcion}
-              onChange={(e) =>
-                handleItemChange(idx, "descripcion", e.target.value)
-              }
-              className="border p-1 w-full"
-              placeholder="Descripción"
-            />
-          </td>
-          <td className="border p-2">
-            <input
-              type="number"
-              min="1"
-              value={item.cantidad}
-              onChange={(e) =>
-                handleItemChange(idx, "cantidad", e.target.value)
-              }
-              className="border p-1 w-16 text-right"
-            />
-          </td>
-          <td className="border p-2">
-            <input
-              type="number"
-              min="0"
-              value={item.precio_unitario}
-              onChange={(e) =>
-                handleItemChange(idx, "precio_unitario", e.target.value)
-              }
-              className="border p-1 w-24 text-right"
-            />
-          </td>
-          <td className="border p-2 text-right">
-            {item.sub_total.toLocaleString("es-CO", {
-              style: "currency",
-              currency: "COP",
-            })}
-          </td>
-          <td className="border p-2 text-center">
-            <button
-              type="button"
-              onClick={() => removeItem(idx)}
-              className="bg-red-500 text-white px-2 py-1 rounded"
-            >
-              X
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-
+              <table className="w-full border mb-4">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">Descripción</th>
+                    <th className="border p-2">Cantidad</th>
+                    <th className="border p-2">Precio</th>
+                    <th className="border p-2">Subtotal</th>
+                    <th className="border p-2">Eliminar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="border p-2">
+                        <input
+                          value={item.descripcion}
+                          onChange={(e) =>
+                            handleItemChange(idx, "descripcion", e.target.value)
+                          }
+                          className="border p-1 w-full"
+                          placeholder="Descripción"
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.cantidad}
+                          onChange={(e) =>
+                            handleItemChange(idx, "cantidad", e.target.value)
+                          }
+                          className="border p-1 w-16 text-right"
+                        />
+                      </td>
+                      <td className="border p-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.precio_unitario}
+                          onChange={(e) =>
+                            handleItemChange(
+                              idx,
+                              "precio_unitario",
+                              e.target.value
+                            )
+                          }
+                          className="border p-1 w-24 text-right"
+                        />
+                      </td>
+                      <td className="border p-2 text-right">
+                        {item.sub_total.toLocaleString("es-CO", {
+                          style: "currency",
+                          currency: "COP",
+                        })}
+                      </td>
+                      <td className="border p-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(idx)}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          X
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* Totales */}
-<div className="text-right mb-6 border-t pt-4">
-  <p>
-    Subtotal:{" "}
-    {subtotal.toLocaleString("es-CO", {
-      style: "currency",
-      currency: "COP",
-    })}
-  </p>
+            <div className="text-right mb-6 border-t pt-4">
+              <p>
+                Subtotal:{" "}
+                {subtotal.toLocaleString("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                })}
+              </p>
 
-  {/* 🔹 Campo editable para descuento */}
-  <div className="flex justify-end items-center gap-2 my-2">
-    <label className="font-medium">Descuento (%):</label>
-    <input
-      type="number"
-      min="0"
-      max="100"
-      name="porcentaje_descuento"
-      value={cotizacion.porcentaje_descuento}
-      onChange={handleChange}
-      className="border p-1 w-20 text-right"
-    />
-  </div>
+              {/* 🔹 Campo editable para descuento */}
+              <div className="flex justify-end items-center gap-2 my-2">
+                <label className="font-medium">Descuento (%):</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  name="porcentaje_descuento"
+                  value={cotizacion.porcentaje_descuento}
+                  onChange={handleChange}
+                  className="border p-1 w-20 text-right"
+                />
+              </div>
 
-  {descuento > 0 && (
-    <p className="text-yellow-600">
-      Descuento aplicado: -{" "}
-      {descuento.toLocaleString("es-CO", {
-        style: "currency",
-        currency: "COP",
-      })}
-    </p>
-  )}
+              {descuento > 0 && (
+                <p className="text-yellow-600">
+                  Descuento aplicado: -{" "}
+                  {descuento.toLocaleString("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                  })}
+                </p>
+              )}
 
-  <p className="font-bold text-2xl text-green-700">
-    Total a pagar:{" "}
-    {total.toLocaleString("es-CO", {
-      style: "currency",
-      currency: "COP",
-    })}
-  </p>
-</div>
-
+              <p className="font-bold text-2xl text-green-700">
+                Total a pagar:{" "}
+                {total.toLocaleString("es-CO", {
+                  style: "currency",
+                  currency: "COP",
+                })}
+              </p>
+            </div>
 
             {/* Botón */}
             <div className="flex gap-2 justify-end">
