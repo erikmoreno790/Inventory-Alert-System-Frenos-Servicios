@@ -129,39 +129,52 @@ const NuevaCotizacionPage = () => {
   };
 
   // 🔹 Al enviar, limpiar el borrador
-  const handleSubmit = async () => {
-    if (!cotizacion.nombre_cliente.trim() || !cotizacion.placa.trim()) {
-      alert("El nombre del cliente y la placa son obligatorios.");
-      return;
-    }
+const handleSubmit = async () => {
+  if (!cotizacion.nombre_cliente.trim() || !cotizacion.placa.trim()) {
+    alert("El nombre del cliente y la placa son obligatorios.");
+    return;
+  }
 
-    try {
-      const formData = new FormData();
-      Object.entries(cotizacion).forEach(([key, value]) => {
-        if (key === "items") {
-          formData.append("items", JSON.stringify(value));
-        } else {
-          formData.append(key, value);
-        }
-      });
+  try {
+    // 👉 Recalcular totales antes de enviar
+    const { items, subtotal, descuento, total } = calcularTotales();
 
-      imagenes.forEach((img) => formData.append("imagenes", img));
+    // 👉 Crear un objeto con los totales incluidos
+    const cotizacionConTotales = {
+      ...cotizacion,
+      items,       // items con sub_total
+      subtotal,
+      descuento,
+      total,
+    };
 
-      await api.post("/cotizaciones", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    const formData = new FormData();
+    Object.entries(cotizacionConTotales).forEach(([key, value]) => {
+      if (key === "items") {
+        formData.append("items", JSON.stringify(value));
+      } else {
+        formData.append(key, value);
+      }
+    });
 
-      alert("¡Cotización creada exitosamente!");
-      localStorage.removeItem("draftCotizacion"); // ✅ limpiar
-      navigate("/historial-cotizaciones");
-    } catch (error) {
-      console.error(error);
-      alert("Error al guardar la cotización.");
-    }
-  };
+    imagenes.forEach((img) => formData.append("imagenes", img));
+
+    await api.post("/cotizaciones", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    alert("¡Cotización creada exitosamente!");
+    localStorage.removeItem("draftCotizacion"); // ✅ limpiar
+    navigate("/historial-cotizaciones");
+  } catch (error) {
+    console.error(error);
+    alert("Error al guardar la cotización.");
+  }
+};
+
 
   return (
     <div className="flex min-h-screen bg-gray-100">
