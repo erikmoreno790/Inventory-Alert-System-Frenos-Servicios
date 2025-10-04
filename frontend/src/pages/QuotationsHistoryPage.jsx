@@ -81,10 +81,10 @@ const QuotationsHistoryPage = () => {
     startIndex + itemsPerPage
   );
 
-  // 🔹 Función para renderizar paginación truncada
+  // 🔹 Función para renderizar paginación truncada sin duplicados
   const renderPagination = () => {
     const pages = [];
-    const maxVisible = 5; // máximo de páginas visibles (sin contar extremos)
+    const maxVisible = 5;
 
     if (totalPages <= maxVisible + 2) {
       for (let i = 1; i <= totalPages; i++) {
@@ -111,14 +111,19 @@ const QuotationsHistoryPage = () => {
       pages.push(totalPages);
     }
 
-    return pages.map((p, idx) =>
+    // ✅ Quitar duplicados usando filter
+    const uniquePages = pages.filter(
+      (p, index) => pages.indexOf(p) === index
+    );
+
+    return uniquePages.map((p, idx) =>
       p === "..." ? (
-        <span key={idx} className="px-3 py-1">
+        <span key={`dots-${idx}`} className="px-3 py-1">
           ...
         </span>
       ) : (
         <button
-          key={p}
+          key={`page-${p}`}
           onClick={() => setCurrentPage(p)}
           className={`px-3 py-1 border rounded ${
             currentPage === p ? "bg-blue-500 text-white" : "bg-white"
